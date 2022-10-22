@@ -1,0 +1,349 @@
+import math
+import datetime
+from random import randint
+from networkx.algorithms.community.centrality import girvan_newman
+import pandas as pd
+import networkx as nx
+
+#the function gets a dataframe and set colors based on the company
+#from the dataframe.
+def setColours(df):
+    resultDf=dataframeCombiner("חברה יוזם","חברה מקבל","חברה", df)
+    #getting random colours for the edges later
+    for i in range(len(resultDf.index)):
+        colorsDic[str(resultDf["חברה"].loc[i])]=('#%06X' % randint(0, 0xFFFFFF))
+
+    colorsDic["חסר חברה"]=('#%06X' % randint(0, 0xFFFFFF))
+    k = 1
+    #giving value for the keys because it can't read hebrew
+    for i in range(len(resultDf.index)):
+        companyDic[str(resultDf["חברה"].loc[i])]="a"*k
+        k+=1 
+    companyDic["חסר חברה"]="null"
+
+
+#the function gets a dataframe, iterates through it
+#to create the nodes and edges. at the end, the function
+#returns the nodes and edges 
+def newElements(tempDf):
+    cy_nodesH=[]
+    cy_edgesH=[]
+    
+    timeDict=totalCallTime(tempDf)
+    
+    #grouping the dataframe to iterate through it without duplicates
+    tempDfGrouped=tempDf.groupby(["זיהוי יוזם","חברה יוזם","חברה מקבל","זיהוי מקבל","יוזם","מקבל"],dropna= False).size().reset_index(name="count")    
+    if not tempDf.empty and tempDfGrouped.empty:
+        phoneSender= str(tempDf["יוזם"].loc[0])
+
+        phoneReceiver= str(tempDf["מקבל"].loc[0])
+        try:
+            #checking if the value is null. if so, assigning a value to it 
+            math.isnan(float(str(tempDf["זיהוי יוזם"].loc[0])))
+            sender="חסר שם"
+        except:
+            sender = str(tempDf["זיהוי יוזם"].loc[0])
+
+        try:
+            #checking if the value is null. if so, assigning a value to it 
+            math.isnan(float(str(tempDf["זיהוי מקבל"].loc[0])))
+            receiver="חסר שם"
+        except:
+            receiver = str(tempDf["זיהוי מקבל"].loc[0]) 
+        #checking if the company is null. incase it does, gives
+        #it a value to set the colour for it later
+        try:
+            #checking if the value is null. if so, assigning a value to it 
+            math.isnan(float(str(tempDf["חברה מקבל"].loc[0])))
+            receiverCompany="חסר חברה"
+        except:
+            receiverCompany=str(tempDf["חברה מקבל"].loc[0])
+        
+        #checking if the company is null. incase it does, gives
+        #it a value to set the colour for it later    
+        try:
+            math.isnan(float(str(tempDf["חברה יוזם"].loc[0])))
+            senderCompany="חסר חברה"  
+        except:
+            senderCompany=str(tempDf["חברה יוזם"].loc[0])   
+
+
+        cy_nodesH.append({"data": {"id": phoneSender, "label": phoneSender +"-" + sender , "company" :senderCompany}, 'classes': str(companyDic[senderCompany])})   
+
+        cy_nodesH.append({"data": {"id": phoneReceiver, "label": phoneReceiver +"-" + receiver, "company" : receiverCompany}, "classes": str(companyDic[receiverCompany])})
+        weight=str(len(tempDf.index))
+        key=str(phoneSender)+str(phoneReceiver)
+
+        cy_edgesH.append({
+            'data': {
+            'source': phoneSender,
+            'target': phoneReceiver,
+             "text": "[שיחות: "+weight+" משך השיחות: "+str(timeDict[key])+ "]" +"$" +sender + "$" + receiver
+             },
+            "classes": companyDic[senderCompany]
+        })
+        return(cy_nodesH+cy_edgesH)    
+    for i in range(len(tempDfGrouped.index)):
+
+        phoneSender= str(tempDfGrouped["יוזם"].loc[i])
+
+        phoneReceiver= str(tempDfGrouped["מקבל"].loc[i])
+
+        try:
+            #checking if the value is null. if so, assigning a value to it 
+            math.isnan(float(str(tempDfGrouped["זיהוי יוזם"].loc[i])))
+            sender="חסר שם"
+        except:
+            sender = str(tempDfGrouped["זיהוי יוזם"].loc[i])
+
+        try:
+            #checking if the value is null. if so, assigning a value to it 
+            math.isnan(float(str(tempDfGrouped["זיהוי מקבל"].loc[i])))
+            receiver="חסר שם"
+        except:
+            receiver = str(tempDfGrouped["זיהוי מקבל"].loc[i]) 
+        #checking if the company is null. incase it does, gives
+        #it a value to set the colour for it later
+        try:
+            #checking if the value is null. if so, assigning a value to it 
+            if(math.isnan(float(str(tempDfGrouped["חברה מקבל"].loc[i])))):
+                receiverCompany="חסר חברה"
+        except:
+            receiverCompany=str(tempDfGrouped["חברה מקבל"].loc[i])
+        
+        #checking if the company is null. incase it does, gives
+        #it a value to set the colour for it later    
+        try:
+            if(math.isnan(float(str(tempDfGrouped["חברה יוזם"].loc[i])))):
+                senderCompany="חסר חברה"  
+        except:
+            senderCompany=str(tempDfGrouped["חברה יוזם"].loc[i])   
+
+
+        cy_nodesH.append({"data": {"id": phoneSender, "label": phoneSender + "-"+ sender , "company" :senderCompany}, 'classes': str(companyDic[senderCompany])})   
+
+        cy_nodesH.append({"data": {"id": phoneReceiver, "label": phoneReceiver +"-" + receiver, "company" : receiverCompany}, "classes": str(companyDic[receiverCompany])})
+        weight=str(int(tempDfGrouped["count"].loc[i]))
+        key=str(phoneSender)+str(phoneReceiver)
+
+        cy_edgesH.append({
+            'data': {
+            'source': phoneSender,
+            'target': phoneReceiver,
+             "text": "[שיחות: "+weight+" משך השיחות: "+str(timeDict[key])+ "]" +"$" +sender + "$" + receiver
+             },
+             "classes": companyDic[senderCompany]
+        })
+
+    return(cy_nodesH+cy_edgesH)      
+
+
+#calculating the time of the calls, then saving the values
+#in a dictionary which is returned to the caller
+def totalCallTime(df):
+    timeDict = {}
+
+    #iterating through the data frame
+    for i in range(len(df.index)):
+        receiver= df["מקבל"].loc[i]
+        sender= df["יוזם"].loc[i]  
+        timer=str(df["משך"].loc[i])
+        key=str(sender)+str(receiver)
+        #splitting the string into hours, minutes and seconds
+        (h, m, s) = timer.split(':')
+        d = datetime.timedelta(hours=int(h), minutes=int(m), seconds=int(s))
+        #checking if the sender receiver relationship exists in the dictionary
+        if key in timeDict.keys():
+            timeDict[key]=timeDict[key]+d
+        #it doesn't    
+        else:
+            timeDict[key]=d 
+    return timeDict               
+
+
+def getSelectors():
+    selectors.append( {"selector": 'node','style': {"opacity": 0.9,"label": "data(label)"
+          }
+        })
+    selectors.append( { "selector": 'edge',  "style": {
+               "target-arrow-shape": "triangle", #Arrow shape
+               #'arrow-scale': 2, #Arrow size
+              'curve-style': 'straight' #Default curve-If it is style, the arrow will not be displayed, so specify it
+        }
+    })    
+
+        #iterating through the color dictionary to add selector to the graph
+        #(selector are class defining for the graph, seting the color and style of
+        # the other nodes/edges with the same name)
+    for key, color in colorsDic.items():
+        selectors.append({"selector": "."+companyDic[str(key)],'style':{"background-color":color,"line-color":color}}) 
+    return selectors
+
+#the function gets a data frame, iterates through it
+#to create a networkx graph. then calling the algoritem
+#girvan newman to get the amount of communities in the graph.
+#then selectors and are created with colors that are connected
+#to the community
+def getCommunitySettings(df):
+    #checking if it's the first time the function is called.
+    #if it is, will create the nodes and selectors,otherwise will
+    #just return them as they already exists
+    if len(communityDic) == 0:
+
+        dfGrouped= df.groupby(["זיהוי יוזם","חברה יוזם","חברה מקבל","זיהוי מקבל","יוזם","מקבל"],dropna= False).size().reset_index(name='count') 
+        G = nx.Graph()
+        timeDict=totalCallTime(df)
+        for i in range(len(dfGrouped.index)):
+            #getting the info about calls from the dictionary
+
+            try:
+                math.isnan(float(str(dfGrouped["זיהוי מקבל"].loc[i])))
+                receiver= "חסר שם"
+            except:    
+                receiver= dfGrouped["זיהוי מקבל"].loc[i]
+
+            try:
+                math.isnan(float(str(dfGrouped["זיהוי יוזם"].loc[i])))
+                sender= "חסר שם"
+            except:    
+                sender= dfGrouped["זיהוי יוזם"].loc[i]
+        
+
+
+            G.add_node(sender, title= sender)
+            G.add_node(receiver,title=receiver)
+            G.add_edge( sender,receiver) 
+        communities = girvan_newman(G)
+
+        node_groups = []
+        for com in next(communities):
+            node_groups.append(list(com))
+
+
+        b = 0
+        for i in range(len(node_groups)):
+            b+=1
+            for j in range(len(node_groups[i])):
+                communityDic[node_groups[i][j]] = "k"*b
+
+
+        b+=1
+        communityDic["חסר שם"]= "k"*b
+ 
+        #getting random colours for the edges later
+        for i in range(len(node_groups)+1):
+            CommunityColorsDic[i]=('#%06X' % randint(0, 0xFFFFFF))
+
+            
+
+        communitySelectors.append( {"selector": 'node','style': {"opacity": 0.9,"label": "data(label)"
+            }
+            })
+        communitySelectors.append( { "selector": 'edge',  "style": {
+                "target-arrow-shape": "triangle", #Arrow shape
+                 #'arrow-scale': 2, #Arrow size
+                'curve-style': 'straight' #Default curve-If it is style, the arrow will not be displayed, so specify it
+            }
+        })    
+
+            #iterating through the color dictionary to add selector to the graph
+            #(selector are class defining for the graph, seting the color and style of
+            # the other nodes/edges with the same name)
+
+        b = 1    
+        for i in range(len(CommunityColorsDic)):
+            communitySelectors.append({"selector": "."+("k"*b),'style':{"background-color":CommunityColorsDic[i],"line-color":CommunityColorsDic[i]}}) 
+            b+=1
+          
+ 
+        for i in range(len(dfGrouped.index)):
+
+            phoneSender= str(dfGrouped["יוזם"].loc[i])
+
+            phoneReceiver= str(dfGrouped["מקבל"].loc[i])
+
+            try:
+                math.isnan(float(str(dfGrouped["זיהוי יוזם"].loc[i])))
+                sender="חסר שם"
+            except:
+                sender = str(dfGrouped["זיהוי יוזם"].loc[i])
+            try:
+                math.isnan(float(str(dfGrouped["זיהוי מקבל"].loc[i])))
+                receiver="חסר שם"
+            except:
+                receiver = str(dfGrouped["זיהוי מקבל"].loc[i]) 
+            #checking if the company is null. incase it does, gives
+            #it a value to set the colour for it later
+            try:
+                math.isnan(float(str(dfGrouped["חברה מקבל"].loc[i])))
+                receiverCompany="חסר חברה"
+            except:
+                receiverCompany=str(dfGrouped["חברה מקבל"].loc[i])
+        
+                #checking if the company is null. incase it does, gives
+                #it a value to set the colour for it later    
+            try:
+                math.isnan(float(str(dfGrouped["חברה יוזם"].loc[i])))
+                senderCompany="חסר חברה"   
+            except:
+                senderCompany=str(dfGrouped["חברה יוזם"].loc[i])   
+
+
+            communityNodes.append({"data": {"id": phoneSender, "label": phoneSender + "-"+ sender , "company" :senderCompany}, 'classes': str(communityDic[sender])})   
+
+            communityNodes.append({"data": {"id": phoneReceiver, "label": phoneReceiver +"-" + receiver, "company" : receiverCompany}, "classes": str(communityDic[receiver])})
+            weight=str(int(dfGrouped["count"].loc[i]))
+            key=str(phoneSender)+str(phoneReceiver)
+
+            communityNodesedges.append({
+                'data': {
+                'source': phoneSender,
+                'target': phoneReceiver,
+                "text": "[שיחות: "+weight+" משך השיחות: "+str(timeDict[key])+ "]" +"$" +sender + "$" + receiver
+                },
+                "classes": communityDic[sender]
+            })
+            
+    return(communityNodes+communityNodesedges, communitySelectors)  
+
+
+#initializing the values for global variables
+def variablesInit():
+    global colorsDic
+    global companyDic
+    global communityDic
+    global communityNodes
+    global communityNodesedges
+    global CommunityColorsDic
+    global communitySelectors
+    global selectors
+    companyDic={}
+    colorsDic={}
+    communityNodes =[] 
+    communityNodesedges = [] 
+    communityDic={}
+    CommunityColorsDic={} 
+    communitySelectors=[]
+    selectors=[]  
+
+
+#the function combines two columns into one
+#the caller send the columns names and the
+#name of the one column which is the result of
+#the combinning.
+#the function returns the combined column as dataframe 
+def dataframeCombiner(send, receive, columnName, dfCombine):
+    receiverColumn= dfCombine[receive]
+    senderColumn= dfCombine[send]
+    
+    #merging them into one frame
+    frames = [senderColumn,receiverColumn]
+    combinedFrame = pd.concat(frames,ignore_index=True)
+    combinedDf=combinedFrame.to_frame()
+    #dropping duplicates
+
+    combinedDf.drop_duplicates(inplace=True)
+    combinedDf.reset_index(drop=True,inplace=True) 
+    combinedDf.columns =[columnName]
+
+    return combinedDf      
