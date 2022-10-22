@@ -161,17 +161,9 @@ def dfSetter(firstExcel,secondExcel,twoExcels):
 def sparkInit():   
     global nlp_pipeline
     global spark
-    #st = time.time()
+
     
     spark=sparknlp.start()
-    # spark = SparkSession.builder \
-    #     .appName("Spark NLP")\
-    #     .master("local[*]")\
-    #     .config("spark.driver.memory","16G")\
-    #     .config("spark.driver.maxResultSize", "0") \
-    #     .config("spark.kryoserializer.buffer.max", "2000M")\
-    #     .config("spark.jars", "spark-nlp-gpu-assembly-4.0.1.jar")\
-    #     .getOrCreate()
     
     
     # setting the document assembler. inputCol is where the information comes from
@@ -191,8 +183,7 @@ def sparkInit():
         .setOutputCol("cleanTokens")
 
     nlp_pipeline = Pipeline(stages=[documentAssembler,tokenizer, stop_words])
-    #et = time.time()
-    #print("spark took " , et-st)
+
     
 def proccessor(text,fileName):
     
