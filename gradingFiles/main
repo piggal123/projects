@@ -164,8 +164,7 @@ def sparkInit():
 
     
     spark=sparknlp.start()
-    
-    
+ 
     # setting the document assembler. inputCol is where the information comes from
     # and outputcol is where to put the information after the proccess is 
     # done
@@ -190,7 +189,7 @@ def proccessor(text,fileName):
     # creating a pipleine with the desired settings, putting the text in the text column
     light_pipeline = LightPipeline(nlp_pipeline.fit(spark.createDataFrame([[""]]).toDF("text")))
     results = light_pipeline.annotate(text)
-    #print("text is " , results["document"])
+
     
     # getting the words without the stop words from the text
     value= results["cleanTokens"]
