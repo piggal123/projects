@@ -81,6 +81,7 @@ def textExtractor(dirLoc):
 def proccessor(text,fileName):   
     global resultDf
     textDic={}
+    # creates a list from the words in the text with label, text and confidence score
     doc = nlp(text)
     # iterating through the entites 
     for entity in doc.ents:
