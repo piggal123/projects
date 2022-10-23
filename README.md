@@ -21,6 +21,6 @@ girvan_newman one which divides them into communities). the user can also choose
 the program itrerates through files with text, whenever it's a picture, pdf or word file and extract the text inside. the user can choose whenever he wants each file to get a txt file with the text or to combine all the texts into a single searchable pdf. 
 
 
-**project NER **:
+**project NER**:
 
 the program iterates through files, searching for NER. the end result is an excel file with the file name, type of the NER and the text of the NER itself. 
