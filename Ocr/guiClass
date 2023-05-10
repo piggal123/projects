@@ -1,0 +1,120 @@
+import pandas as pd
+import time
+
+class gui_vars:
+
+    dir_load=""
+    error_path=""
+    error_df= pd.DataFrame(columns=["file name","error"])
+    ocred_files_count=0
+    rotated_files_count = 0
+    workspace_id = 0
+    dpi = 0
+    workers = 15
+    rotated_path=""
+    st= 0 
+    psm = "11"
+
+    # setting the location where the files will be loaded from
+    def set_dir_load(self,location):
+       self.dir_load=location+"//files//"
+        
+    # returning the folder location    
+    def get_dir_load(self):
+        return self.dir_load 
+    
+    def set_psm(self,psm):
+        self.psm=psm
+        
+    def get_psm(self):
+        return self.psm
+    
+    def set_dpi(self,dpi):
+        self.dpi=dpi
+        
+    def get_dpi(self):
+        return (self.dpi)
+    # setting the location where the files will be loaded from
+    def set_rotated_path(self,location):
+       self.rotated_path=self.dir_load+location
+        
+    # returning the folder location    
+    def get_rotated_path(self):
+        return self.rotated_path 
+        
+    def set_workspace_id(self,number):
+        self.workspace_id=number
+        
+    def get_workspace_id(self):
+        return str(self.workspace_id)
+    
+    
+    # setting how many threads will run at the same time
+    def set_workers(self,number):
+        self.workers=number
+     
+    # returning the number of threads    
+    def get_workers(self):
+        return self.workers
+
+        
+    def set_error_path(self,location):
+        self.error_path=self.dir_load+"//"+location
+        
+    def get_error_path(self):
+        return self.error_path
+    
+    
+    # resetting the values of the variables 
+    def reset_all(self):
+        self.st_init()
+        self.rotated_files_count = 0 
+        self.ocred_files_count = 0
+     
+    # increasing by one the amount of files that were finished, to update
+    # the text of the top label and the progress bar
+    def increase_rotated_files_count(self):
+        self.rotated_files_count+=1
+        
+    # returning the value of files count    
+    def get_rotated_files_count(self):
+        return self.rotated_files_count
+    
+    # increasing by one the amount of files that were finished, to update
+    # the text of the top label and the progress bar
+    def increase_ocred_files_count(self):
+        self.ocred_files_count+=1
+        
+    # returning the value of files count    
+    def get_ocred_files_count(self):
+        return self.ocred_files_count
+    
+    # checking whenever the excel is empty. if so, saving it with no error were found
+    def empty_excel(self):
+        if self.error_df.empty:
+
+            self.saving_excel("no errors","were found")
+         
+    # updating the excel with the file name and error, then saving it
+    def saving_excel(self,file_name,error):
+        # creating a row with the file name and the error
+        error_row = pd.DataFrame([{'file name':file_name, 'error':error}])
+        
+        # concating the row with the pandas
+        self.error_df=pd.concat([self.error_df, error_row])
+        
+        # creating a writer for the excel
+        writer= pd.ExcelWriter(self.get_error_path()+"//errors.xlsx", engine = 'xlsxwriter')
+
+        self.error_df.to_excel(writer,sheet_name="errors",index=False)
+        worksheet=writer.sheets["errors"]
+        worksheet.set_column(0,2,30)
+        
+        # saving the excel
+        writer.save()         
+    
+    def st_init(self):
+        self.st=time.time()
+    
+    def get_st_time(self):
+        return self.st    
