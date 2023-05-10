@@ -16,10 +16,6 @@ which includes his name and the company he is from. each edge contains how long 
 the user to change the graph. the user can change the graph based on the caller, receiver, date of the call, type of the graph (whenever it's the normal view or 
 girvan_newman one which divides them into communities). the user can also choose another excel file to receieve a graph for it as well, replacing the old one.
 
-**project extractor**:
-
-the program itrerates through files with text, whenever it's a picture, pdf or word file and extract the text inside. the user can choose whenever he wants each file to get a txt file with the text or to combine all the texts into a single searchable pdf. 
-
 
 **project NER**:
 
