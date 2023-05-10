@@ -1,0 +1,580 @@
+
+import cv2
+import os
+import pytesseract
+import guiClass
+import threading
+from tkinter.ttk import Progressbar
+import tkinter as tk
+from io import  BytesIO
+from PIL import Image, ImageFile
+# UnidentifiedImageError
+# import numpy as np
+
+from tkinter import Checkbutton, IntVar
+from pdf2image import convert_from_path,pdfinfo_from_path
+from pytesseract import image_to_osd, TesseractError
+from concurrent.futures import ThreadPoolExecutor
+
+
+import re,time
+
+
+import requests
+import base64
+import warnings
+
+import tkinter.filedialog
+
+
+# These line allow truncated images to be loaded.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+# These line set the maximum image pixels to 999999999.
+Image.MAX_IMAGE_PIXELS=999999999
+
+# creating a instance from the class to access the methods
+gui_vars=guiClass.gui_vars()
+# creating the window
+window = tk.Tk()
+window.title("רשות התחרות")
+window.geometry('380x400')
+
+
+no_thread_check_box = IntVar()
+rotate_check_box=IntVar()
+
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+
+
+
+# artifact_id: the identification id of the file in the relativity system 
+# text: the text of the extracted record
+# condition: whenever the proccess failed (false) or succeed (true) 
+# the function trying to upload the text to the extracted text field of the object
+# in relativity. if it fails, the excel will be updated otherwise will return
+# true
+def update_relativity(artifact_id,text, condition):
+    
+    # creating a request to the data base to update the 
+    # relevant fields 
+    if j.ok:
+        return True
+    else:
+  
+        # updating the excel to show the text failed to be uploaded
+        gui_vars.saving_excel(artifact_id,"failed to upload")
+        print("ERROR:", artifact_id, " failed to upload")
+        return False
+
+
+
+# setting the thread
+class myThread (threading.Thread):
+    def __init__(self, name,window, top_info_label,top_progress_bar,top_start_label,top_end_label,
+    workspace_error_label,psm_error_label
+   ,folder_error_label,dpi_entry,workspace_id_entry
+   ,thread_entry,psm_entry):
+      threading.Thread.__init__(self)
+      self.name = name
+      self.window = window
+      self.top_info_label= top_info_label
+      self.top_progress_bar=top_progress_bar
+      self.top_start_label=top_start_label
+      self.top_end_label=top_end_label
+      self.dpi_entry=dpi_entry
+      self.workspace_error_label=workspace_error_label
+      self.psm_error_label=psm_error_label
+      self.folder_error_label=folder_error_label
+      self.workspace_id_entry=workspace_id_entry
+      self.thread_entry=thread_entry
+      self.psm_entry=psm_entry
+    def run(self):
+        if self.name=="checker":
+            checker(self.window,self.top_info_label,self.top_progress_bar,self.top_start_label,self.top_end_label,
+            self.workspace_error_label,self.psm_error_label,self.folder_error_label,self.dpi_entry,self.workspace_id_entry,
+                  self.thread_entry,self.psm_entry)
+
+
+# the method receives tk inter variables and updates them. the function will then
+# call the text_extractor function to start the extraction from them records.
+
+
+# the fuction gets an image and a page number,
+# then checks the angle and rotate it to the normal
+# one. the function returns the rotated image
+def rotate_images(file,img):
+
+    try:
+        angle_rotation = pytesseract.image_to_osd(image=img,output_type=pytesseract.Output.DICT)['orientation']
+        return img.rotate(angle_rotation)
+
+        
+    except TesseractError as e:
+        print("tesseracterror:",e)
+        return img
+    
+    except OSError as e:
+        print("oserror:",e)
+        return img
+
+
+# the function gets a file path of pdf file and it's name,
+# rotating the pdf pages and extracting the text
+# file_path= the path of the pdf file
+# image_name = the name of the pdf file
+# the function returns the text from the pdf
+def rotate(file_path, image_name):
+  
+    pdf2image=[]
+    
+    # getting info from the pdf, checking how many pages it has
+    info = pdfinfo_from_path(file_path,poppler_path= r"C:\ForGal\OCR\poppler-23.01.0\Library\bin")
+    max_pages = info["Pages"]
+    
+    # itertating through the pdf, changing it to pdf2image type
+    for page in range(1, max_pages+1, 10) : 
+        pdf2image+=convert_from_path(file_path, dpi=gui_vars.get_dpi(),poppler_path= r"C:\ForGal\OCR\poppler-23.01.0\Library\bin", first_page=page, last_page = min(page+10-1,max_pages))
+    
+    text= " "
+    
+    # iterating through the images, rotating them until the orientation 
+    # is correct, then extracting the text
+    for i in range(len(pdf2image)):   
+
+        pdf2image[i] = rotate_images(image_name,pdf2image[i])
+        
+        
+        # saving the image locally to extract the text from it
+        pdf2image[i].save(gui_vars.get_dir_load()+"//"+image_name +".jpg", 'JPEG')
+        with Image.open(gui_vars.get_dir_load()+"//"+image_name +".jpg") as img:
+               
+            img.load()
+            # setting which languages we expect to see in the pictures so the text is saved correctly
+            text += pytesseract.image_to_string(img,'heb+eng+ara',config="--psm --dpi 300"+gui_vars.get_psm()) 
+    
+    #deleting the image once we are done with it
+    try:
+        os.remove(gui_vars.get_dir_load()+"//"+image_name +".jpg")
+        
+    except:
+        # the deletion failed
+        print("Failed to delete", gui_vars.get_dir_load()+"//"+image_name +".jpg")
+        
+    return text
+     
+# the method receives all of the tkinter variables, including a list of files to iterate
+# through. the method will iterate the files, converting them to a readable pdf, saving them
+# in the result folder. 
+def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_label,file_path):
+
+    top_start_label.config(text=str(gui_vars.get_ocred_files_count()))
+    top_progress_bar['value']=gui_vars.get_ocred_files_count()
+
+    top_info_label.config(text="extracting text")  
+
+    artifact_id= os.path.basename(file_path).split(".")[0]
+
+    text = " "
+
+    # checking if the file is pdf
+
+    try:
+        
+        # extracting the text with roate method
+        text = rotate(file_path, artifact_id)
+
+        if update_relativity(artifact_id,text, True):
+            print("file {} was succesfully uploaded to Relativity".format(artifact_id))
+     
+    # the extraction failed        
+    except:
+          text = "tesseract failed"
+          print(text)
+          if update_relativity(artifact_id,text, False):
+              print("file {} tesseract failed".format(artifact_id)) 
+          gui_vars.saving_excel(artifact_id,text)    
+
+    # deleting the file once we are done with it
+    os.remove(file_path)
+    
+    gui_vars.increase_ocred_files_count()    
+    top_start_label.config(text=str(gui_vars.get_ocred_files_count()))
+    top_progress_bar['value']=gui_vars.get_ocred_files_count()
+
+
+# downloading the files from relativity, updating the tk inter variables 
+def info_download(window,top_info_label,top_progress_bar
+                                                                           ,top_start_label,top_end_label,
+                                                                           resp):
+
+    top_info_label.config(text="in progress")
+    all_objects = resp['Objects']
+    
+    top_start_label.config(text="0")
+    top_end_label.config(text=str(len(all_objects)))
+    top_progress_bar['maximum']=len(all_objects)
+    top_info_label.config(text="getting info")
+
+        
+    top_info_label.config(text="downloading files")
+
+    top_start_label.config(text=("0"))   
+    top_progress_bar['value']=0    
+    print("Downloading files from Relativity...")
+    
+    # checking if the threads check box was checked
+    if no_thread_check_box.get()==1:
+        files_download(window,top_info_label,top_progress_bar
+                                                                                       ,top_start_label,top_end_label,all_objects)
+        
+    # it wasn't checked    
+    else:
+        threads = []
+
+        # calling the threadpoolexecutor to create threads by the number that the
+        # user decided on. 
+        with ThreadPoolExecutor(max_workers=gui_vars.get_workers()) as executor:
+            
+
+
+            for temp_list in [all_objects[i::gui_vars.get_workers()] for i in range(gui_vars.get_workers())]:
+                threads.append(executor.submit(files_download,window,top_info_label,top_progress_bar
+                                                                                            ,top_start_label,top_end_label,
+                                                                                            temp_list))
+        
+                # making the thread wait 2 seconds so the system have time to process 
+                time.sleep(2)
+        
+        
+    # printing how much time the whole proccess took    
+    et=time.time()
+    formated_time="{:.2f}".format(et-gui_vars.get_st_time())    
+  
+    print("took",formated_time,"seconds")
+    top_info_label.config(text="done")
+    print('done')        
+
+# the function proccess the image with dilation and erosion
+# image - the function receives an image
+# return - the function returns the proccessed image 
+def dilate_erode_image(image):
+
+    image = np.asarray(image,dtype="uint8")
+    kernel = np.ones((1,1),np.uint8)
+    image = cv2.dilate(image,kernel,iterations=1)
+    image = cv2.erode(image,kernel,iterations=1)
+    image = Image.fromarray(np.uint8(image))
+    return image
+
+# downloading the files from relativity, updating the tk inter variables 
+def files_download(window,top_info_label,top_progress_bar
+                                                                           ,top_start_label,top_end_label,
+                                                                            all_objects):
+
+    # iterating through the list with artifact id to download the files
+    
+    for i in range(len(all_objects)):
+        try:
+            if 'ArtifactID' in all_objects[i]:
+            
+                artifact_id= str(all_objects[i]['ArtifactID'])
+                response = requests.get(url =)
+    
+                if response.status_code != 200:
+                    print("problem with response from relativity")
+                    break
+                # trying to save the file
+                
+    
+                
+                if all_objects[i]['FieldValues'][0]["Value"] != "PDF":
+            
+                    img = Image.open(BytesIO(response.content))
+    
+                    pdf = img.convert('RGB')
+                    #pdf = dilate_erode_image(pdf)
+                    pdf.save(gui_vars.get_dir_load()+artifact_id+".pdf",'PDF',resolution=300)
+                    
+    
+                else:    
+                    file = open(gui_vars.get_dir_load()+artifact_id+".pdf","wb")
+                    file.write(response.content)
+                    file.close()
+        
+        
+                top_start_label.config(text=str(i+1))   
+                top_progress_bar['value']=i+1    
+                file_path=gui_vars.get_dir_load()+artifact_id+".pdf"
+                
+                
+                extractor(window, top_info_label, top_progress_bar, top_start_label, top_end_label, file_path) 
+                    
+        except:
+
+            artifact_id= str(all_objects[i]['ArtifactID'])
+            # save failed
+            text = "failed to save"
+            gui_vars.saving_excel(artifact_id,text)
+            if update_relativity(artifact_id, text, False):
+                print("updated to relativity, failed to save "  + str(all_objects[i]['ArtifactID']))
+
+            
+        
+
+
+# recreating the folders to clear the data inside
+def create_folder(folder):
+    # creating the folder if it doesn't exists
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+        
+ 
+
+
+def start(window,top_info_label,top_progress_bar
+                                                                           ,top_start_label,top_end_label,
+                                                                            workspace_error_label,psm_error_label
+                                                                           ,folder_error_label,dpi_entry,workspace_id_entry
+                                                                           ,thread_entry,psm_entry):
+    
+    # resetting the gui values 
+    gui_vars.reset_all()
+    
+    checker_thread = myThread("checker",window,top_info_label,top_progress_bar
+                                                                               ,top_start_label,top_end_label,
+                                                                                workspace_error_label,psm_error_label
+                                                                               ,folder_error_label,dpi_entry,workspace_id_entry
+                                                                               ,thread_entry,psm_entry)
+    
+    checker_thread.start()
+
+# the function receives the tkinter variables, updating them through the process
+# the function will call the info_download thread to start downloading the files
+def checker(window,top_info_label,top_progress_bar
+                                                                           ,top_start_label,top_end_label,
+                                                                            workspace_error_label,psm_error_label
+                                                                           ,folder_error_label,dpi_entry,workspace_id_entry
+                                                                           ,thread_entry,psm_entry):
+    
+    # checking if the user choose a folder
+    # if he didn't, a message will appear
+    if gui_vars.get_dir_load()=="":
+        
+        folder_error_label.config(text="CHOOSE A FOLDER",fg="red")
+        
+    else:    
+        # clearing the message
+        folder_error_label.config(text=" ")
+        
+
+        psm=psm_entry.get()
+        
+        # checking the input for the dpi resolution 
+        try:
+            gui_vars.set_dpi(int(dpi_entry.get()))
+        
+        # if the user didn't input any, will set it to 100
+        except:
+            gui_vars.set_dpi(100)
+            
+        # checking which psm was choosen, if none will set
+        # to 11
+        if (psm==""):
+            psm="11"
+            
+        gui_vars.set_psm(psm)    
+        try:
+            # checking if the user put a number in the entry
+            gui_vars.set_workers(int(thread_entry.get()))
+            
+            # limiting the amount of threads to 15, even if the user
+            # input more (system limit)
+            if (gui_vars.get_workers()>15):
+                gui_vars.set_workers(15)
+            
+            # if the user input 0, making sure the program will
+            # still run
+            if(gui_vars.get_workers()<1):
+                gui_vars.set_workers(1)
+        
+        # the user ignored the entry, setting the threads number to 15
+        # (as stated in the gui, 15 is the default)            
+        except:
+            gui_vars.set_workers(15)
+        
+        workspace_id=workspace_id_entry.get()
+
+        if(workspace_id==""):
+            workspace_error_label.config(text="ENTER CASE ID", fg ="red")
+            print("please enter workspace ID")
+            
+        elif int(psm)<0 or int(psm)>11:
+            psm_error_label.config(text="WRONG PSM", fg="red")
+            print("wrong psm")
+        else:     
+
+            
+            workspace_error_label.config(text="V",fg="green")
+            psm_error_label.config(text=" ",fg="green")
+            
+            gui_vars.set_workspace_id(str(workspace_id))
+            
+            warnings.catch_warnings()
+            warnings.simplefilter("ignore")
+   
+
+            gui_vars.set_error_path("errors//")
+            create_folder(gui_vars.get_dir_load())
+
+            if (rotate_check_box.get()==1):
+                gui_vars.set_rotated_path("rotated//")
+                gui_vars.set_error_path("rotated//errors//")
+
+                create_folder(gui_vars.get_rotated_path())
+                
+                    
+            create_folder(gui_vars.get_error_path())
+            folder_error_label.config(text="V", fg="green")
+     
+
+                
+            # creating a request for the server
+            dixi_body={
+               "Request":{
+                "ObjectType": {
+                "ArtifactTypeID": number
+                    },
+                    "fields": [
+                    {"Name": field name},
+                    {"Name" : field name},
+                    ],
+                    
+                    "condition" : condition,
+                    "sorts":[
+                    ]
+                },
+                "start" : 0,
+                "length" : 500000
+            }
+            top_info_label.config(text="waiting for response") 
+            response = requests.post(url =)
+            
+            resp = response.json()
+
+            
+
+            info_download(window,top_info_label,top_progress_bar
+                                                                                       ,top_start_label,top_end_label,
+                                                                                        resp)
+
+
+        
+#getting the folder path from the user
+def get_folder_path(window,folder_error_label):
+    
+    gui_vars.set_dir_load(tk.filedialog.askdirectory())
+    # updating the gui to show if the user chose a folder
+    
+    if(gui_vars.get_dir_load()==""):
+        # the user didn't choose a folder, letting him know by putting an
+        # 'x' next to the button
+        folder_error_label.config(text="X",fg="red")
+    else:
+    
+        folder_error_label.config(text="V",fg="green")
+        
+#defining the gui 
+def gui_configurtion():
+    # setting the font for the tittle
+    Font_tuple = ("Comic Sans MS", 20, "bold")
+    font_text= (14)
+    
+    
+    title = tk.Label(text="OCR")
+    title.configure(font = Font_tuple)
+    title.grid(row=0,column = 2)
+    
+    label_one = tk.Label(text="choose a folder to load from",font=font_text)
+    label_one.grid(row=1, column = 2)
+    
+
+    label_two = tk.Label(text="then press start",font=font_text)
+    label_two.grid(row=2, column = 2)
+    
+    tk.Label(window,text="CaseID", font=font_text).place(x=50,y=90)
+    
+    workspace_error_label=tk.Label(window,text=" ",font=font_text)
+    workspace_error_label.place(x=280,y=90)
+    
+
+    workspace_id_entry = tk.Entry(window)
+    workspace_id_entry.grid(row=3, column=2)
+    
+    top_info_label = tk.Label(text= "",font=font_text, width=42)
+    top_info_label.grid(row=4,column = 2)
+    
+    top_start_label = tk.Label(text="", font=font_text)
+    top_start_label.place(x=75,y = 133)
+    
+    top_progress_bar = Progressbar(window, orient= 'HORIZONTAL'.lower(),length= 100, mode= 'determinate')
+    top_progress_bar.grid(row=5, column=2)
+    
+    top_end_label=tk.Label(text=" ", font=font_text)
+    top_end_label.place(x=255,y = 133)
+    
+    
+    rotate_button=Checkbutton(text="rotate files", variable=rotate_check_box,font=font_text)
+    rotate_button.grid(row=8,column=2)    
+    
+    thread_button=Checkbutton(text="no threads", variable=no_thread_check_box,font=font_text)
+    thread_button.grid(row=9,column=2)
+    
+
+    psm_label=tk.Label(text="psm mode",font=font_text)
+    psm_label.place(x=75,y = 215)
+    psm_error_label=tk.Label(text="",font=font_text)
+    psm_error_label.place(x=250,y=215)
+    
+
+    psm_entry = tk.Entry(window, width=4)
+    psm_entry.grid(row= 11, column =2)
+    
+    
+    dpi_label = tk.Label(text="dpi", font=font_text)
+    dpi_label.place(x=120,y=240)
+    
+    dpi_entry=tk.Entry(window, width=4)
+    dpi_entry.grid(row=12, column=2, pady = 10)
+    
+    
+    thread_label= tk.Label(text="threads(1-15)", font=font_text)
+    thread_label.place(x=60,y=270)
+    
+
+
+    thread_entry=tk.Entry(window, width=5)
+    thread_entry.grid(row=13,column=2)
+    
+
+
+    folder_error_label = tk.Label(text="", font=font_text)
+    folder_error_label.place(x=255,y = 300)
+    
+    loading_button = tk.Button(text="loading folder",font=font_text, command = lambda:get_folder_path(window,folder_error_label))
+    loading_button.grid(row=14,column = 2,pady = 5)
+    
+    start_button = tk.Button(text="start",font=font_text, command =lambda: start(window,top_info_label,top_progress_bar
+                                                                               ,top_start_label,top_end_label,
+                                                                               workspace_error_label,
+                                                                               psm_error_label,folder_error_label,dpi_entry,workspace_id_entry
+                                                                               ,thread_entry,psm_entry))
+    start_button.grid(row=15,column = 2)
+
+    
+    window.focus()
+    window.mainloop()
+    
+            
+if __name__ == "__main__":
+    gui_vars.st_init()
+    gui_configurtion()
