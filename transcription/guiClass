@@ -1,0 +1,85 @@
+import pandas as pd
+
+import time
+class gui_vars:
+    dir_load=""
+    workers = 15
+
+    workspace_id = 0
+    error_path=""
+    files_count = 0
+    error_df= pd.DataFrame(columns=["file name","error"])
+
+    st= 0
+    
+    # setting the location where the files will be loaded from
+    def set_dir_load(self,location):
+        self.dir_load=location+"//files//"
+        
+    # returning the folder location    
+    def get_dir_load(self):
+        return self.dir_load    
+       
+    
+    
+    def set_error_path(self,location):
+        self.error_path=self.dir_load+"//"+location
+        
+    def get_error_path(self):
+        return self.error_path
+    
+    # setting how many threads will run at the same time
+    def set_workers(self,number):
+        self.workers=number
+     
+    # returning the number of threads    
+    def get_workers(self):
+        return self.workers
+    
+    def set_workspace_id(self,number):
+        self.workspace_id=number
+        
+    def get_workspace_id(self):
+        return str(self.workspace_id)
+    
+    
+    # increasing by one the amount of files that were finished, to update
+    # the text of the top label and the progress bar
+    def increase_files_count(self):
+        self.files_count+=1
+        
+    # returning the value of files count    
+    def get_files_count(self):
+        return self.files_count
+    
+    # updating the excel with the file name and error, then saving it
+    def saving_excel(self,file_name,error):
+        # creating a row with the file name and the error
+        error_row = pd.DataFrame([{'file name':file_name, 'error':error}])
+        
+        # concating the row with the pandas
+        self.error_df=pd.concat([self.error_df, error_row])
+        
+        # creating a writer for the excel
+        writer= pd.ExcelWriter(self.get_error_path()+"//errors.xlsx", engine = 'xlsxwriter')
+
+        self.error_df.to_excel(writer,sheet_name="errors",index=False)
+        worksheet=writer.sheets["errors"]
+        worksheet.set_column(0,2,30)
+        
+        # saving the excel
+        writer.save()
+    
+    # checking whenever the excel is empty. if so, saving it with no error were found
+    def empty_excel(self):
+        if self.error_df.empty:
+
+            self.saving_excel("no errors","were found")
+            
+    
+    def st_init(self):
+        self.st=time.time()
+    
+    def get_st_time(self):
+        return self.st
+    
