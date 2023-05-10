@@ -8,6 +8,7 @@ extracts the text from them. the text is then uploaded to the data base and the 
 deleted locally
 
 **project transcription:**
+
 the code pulls files from the data base, saving them locally and then sending them to another system
 for transcription. the code receives the text from the other system, updating the data base with it
 and delete the files locally
