@@ -1,5 +1,8 @@
 # projects
 
+**project ocr**:
+
+
 **project grading files:**
 
 the program gets a list of words from an excel file and search for them in text files. each word have a score which the user decides upon in the excel file.
