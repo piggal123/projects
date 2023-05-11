@@ -439,23 +439,8 @@ def checker(window,top_info_label,top_progress_bar
 
                 
             # creating a request for the server
-            dixi_body={
-               "Request":{
-                "ObjectType": {
-                "ArtifactTypeID": number
-                    },
-                    "fields": [
-                    {"Name": field name},
-                    {"Name" : field name},
-                    ],
-                    
-                    "condition" : condition,
-                    "sorts":[
-                    ]
-                },
-                "start" : 0,
-                "length" : 500000
-            }
+            request_body={}
+
             top_info_label.config(text="waiting for response") 
             response = requests.post(url =)
             
