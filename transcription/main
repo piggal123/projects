@@ -440,22 +440,8 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
 
             create_folder(gui_vars.get_error_path())
             # creating a request for the server
-            request_body={
-               "Request":{
-                "ObjectType": {
-                "ArtifactTypeID": number
-                    },
-                    "fields": [
-                    {"Name": field name},
-                    {"Name" : field name},
-                    ],
-                    "condition" :conidition
-                    "sorts":[
-                    ]
-                },
-                "start" : 0,
-                "length" : 50000
-            }
+            request_body={}
+
             top_info_label.config(text="in progress")    
             response = requests.post(url =)
             resp = response.json()
