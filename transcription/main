@@ -1,14 +1,13 @@
 import os
 
-import guiClass
+import guiClassN
 import threading
 from tkinter.ttk import Progressbar
 import tkinter as tk
 
 from tkinter import Checkbutton, IntVar
 
-from concurrent.futures import ThreadPoolExecutor
-import pandas as pd
+from multiprocessing.pool import ThreadPool
 
 import requests
 import base64
@@ -33,24 +32,56 @@ window.geometry('420x350')
 no_thread_check_box = IntVar()
 no_download_check_box=IntVar()
 
+usrPass = ("Relativity.admin@relativity.com:Test1234!")
+b64Val = base64.urlsafe_b64encode(usrPass.encode('UTF-8')).decode('ascii')
+head = {'Content-Type':'application/json','X-CSRF-Header':'-','Authorization':'Basic %s' %b64Val}
 
 
 
+# UPDATE BACK TO RELATIVITY ########################################################
+# artifact_id: the identification id of the file in the relativity system 
+# text: the text of the extracted record 
+# the function trying to upload the text to the extracted text field of the object
+# in relativity. if it fails, the excel will be updated otherwise will return
+# true
+def update_relativity(artifact_id,text):
+    
+    update_body = {
+                        "Request":{
+                            "Object": {
+                                "ArtifactID": artifact_id
+                            },
+                            "FieldValues": [
+                                {
+                                "Field":
+                                    {
+                                    "Name" : "Extracted Text" #Extracted text
+                                    },
+                                    "Value": text
+                                },
+                                {
+                                    "Field":{
+                                    "Name":"ICA_ETYPE"
+                                    },
+                                    
+    
+                                    "Value": False
+                                    } 
+                            ]
+                        }
+                    }
+    j = requests.post(url =
+                          'https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/'+gui_vars.get_workspace_id()+'/object/update', 
+                          json = update_body,headers = head, verify = False)
+    if j.ok:
+        return True
+    else:
+  
+        # updating the excel to show the text failed to be uploaded
+        gui_vars.saving_excel(artifact_id,"failed to upload")
+        print("ERROR:", artifact_id)
+        return False
 
-# updating the data base, if it failed, saving the error
-# in a local excel to track it later
-def update_relativity():
-	# sending a request to the server to update
-  # the relevant fields 
-  if j.ok:
-      return True
-  else:
-
-      # updating the excel to show the text failed to be uploaded
-      gui_vars.saving_excel(artifact_id,"failed to upload")
-      print("ERROR:", artifact_id)
-      return False
- 
 
 
 # setting the thread
@@ -75,51 +106,6 @@ class myThread (threading.Thread):
              self.case_id_error_label,self.folder_error_label)
        
 
-# the method receives tk inter variables and updates them. the function will then
-# call the text_extractor function to start the extraction from them records.
-
-
-def files_iteration(window, top_info_label,top_progress_bar,top_start_label,top_end_label):
-
-
-    files=os.listdir(gui_vars.get_dir_load())
-    top_start_label.config(text="0")
-    top_progress_bar['value']=0
-
-    top_end_label.config(text=str(len(files)))
-    top_progress_bar['maximum']=(len(files))
-    # checking if the user checked the box for no threads 
-    if (no_thread_check_box.get()==1):
-
- 
-        text_extractor(window,top_info_label,top_progress_bar,top_start_label,files)
-      
-    # the user wants threads    
-    else:
-        threads = []
-
-        # calling the threadpoolexecutor to create threads by the number that the
-        # user decided on. 
-        with ThreadPoolExecutor(max_workers=gui_vars.get_workers()) as executor:
-            # splitting the list into even parts, so each thread will run the same
-            # amount of files
- 
-            for temp_list in [files[i::gui_vars.get_workers()] for i in range(gui_vars.get_workers())]:
-                
-                threads.append(executor.submit(text_extractor, window,top_info_label,top_progress_bar,top_start_label,temp_list))
-                # making the thread wait 2 seconds so the system have time to process 
-                time.sleep(2)
-        
-        
-    # checking if the excel is empty   
-    gui_vars.empty_excel()
-
-    # updating the text label above the progress bar 
-    top_info_label.config(text="done")    
-    print("done")   
-    et=time.time()
-    print("took",round(et-gui_vars.get_st_time()),"seconds")
-
 # extracting the file name with it's extenstion from the data
 # returning the file name
 def make_file_name(file_data):
@@ -127,9 +113,9 @@ def make_file_name(file_data):
     
     # iterating through the file data 
     for field in fields:
-        if field['Field']['Name'] == field name:
+        if field['Field']['Name'] == 'Original File Extension':
             extension = field['Value']
-        elif field['Field']['Name'] == field name:
+        elif field['Field']['Name'] == 'Control Number':
             name = field['Value']
     return name + "." + extension
 
@@ -142,55 +128,52 @@ def info_download(window,top_info_label,top_progress_bar
     all_objects = resp['Objects']
     
     top_start_label.config(text="0")
+    
+    # updating the labels with the current numbers
     top_end_label.config(text=str(len(all_objects)))
+    
     top_progress_bar['maximum']=len(all_objects)
+    
+    # updaing the label to present what the program is doing
     top_info_label.config(text="getting info")
     
-    id_list=[]
-    object_id_list=[]
+    # getting the objects from the response
+    all_objects = resp['Objects']
     
-    # iterating through the objects 
-    for i in range(len(all_objects)):
-        try:
-            _object = all_objects[i]      
-            id_list.append(_object['ArtifactID'])
-            object_id_list.append(make_file_name(_object))
-        except:
-            if update_relativity(_object['ArtifactID'], "failed to save"):
-                print("failed to save")
-            gui_vars.saving_excel("file number"+str(_object['ArtifactID']),"failed to save")
-        top_start_label.config(text=str(i))   
-        top_progress_bar['value']=i    
-        
-    top_info_label.config(text="downloading files")
 
     top_start_label.config(text=("0"))   
     top_progress_bar['value']=0    
     print("Downloading files from Relativity...")
     
-
+    # checking if the user checked the "no threads" check box
+    
     if no_thread_check_box.get()==0:
+    
+    	# creating therads based on the amount that the user asked for
+        pool = ThreadPool(processes=gui_vars.get_workers())
         threads = []
+        
+	# splitting the objects evenlly between the threads
+	
+        for temp_list in [all_objects[i::gui_vars.get_workers()] for i in range(gui_vars.get_workers())]:
+		
+            threads.append(pool.apply_async(files_download, (window,top_info_label,top_progress_bar
+                                                                                        ,top_start_label,top_end_label,
+                                                                                        temp_list)))
+        
+        # waiting for all threads to complete
+        for thread in threads:
+            thread.get()
+        
+        # cleaning up the pool
+        pool.close()
+        pool.join()
 
-        # calling the threadpoolexecutor to create threads by the number that the
-        # user decided on. 
-        with ThreadPoolExecutor(max_workers=gui_vars.get_workers()) as executor:
-            # splitting the list into even parts, so each thread will run the same
-            # amount of files
-            k = 0
-            splitted_id_list= [object_id_list[j::gui_vars.get_workers()] for j in range(gui_vars.get_workers())]
-
-            for temp_list in [id_list[i::gui_vars.get_workers()] for i in range(gui_vars.get_workers())]:
-                threads.append(executor.submit(files_download,window,top_info_label,top_progress_bar
-                                                                                           ,top_start_label,top_end_label,
-                                                                                           temp_list,splitted_id_list[k]))
-                k+=1
-                # making the thread wait 2 seconds so the system have time to process 
-                time.sleep(2)
+    # the user checked the "no threads" check box
     else:
 
         files_download(window,top_info_label,top_progress_bar
-                                                                                       ,top_start_label,top_end_label,id_list,object_id_list)
+                                                                                       ,top_start_label,top_end_label,all_objects)
             
         
     print('finished downloading files from Relativity')        
@@ -198,29 +181,53 @@ def info_download(window,top_info_label,top_progress_bar
 # downloading the files from relativity, updating the tk inter variables 
 def files_download(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
-                                                                            id_list,object_id_list):
+                                                                            all_objects):
 
-    for i in range(len(id_list)):
-        response = requests.get(url =
-            'https://relativity-web/Relativity.Rest/API/Relativity.Document/workspace/'+gui_vars.get_workspace_id()+'/downloadnativefile/'+str(id_list[i]),
-            headers = head, verify = False)
+    for i in range(len(all_objects)):
+        try:
 
-        file = open(gui_vars.get_dir_load()+str(id_list[i])+'$'+object_id_list[i],"wb")
-        file.write(response.content)
-        file.close()
-
-
-  
-        file_path=gui_vars.get_dir_load()+str(id_list[i])+'$'+object_id_list[i]
-        
-        text_extractor(window, top_info_label, top_progress_bar, top_start_label,file_path)
-
-
-def splitter(row):
-    # seperating the word from the string 
-    word=str(row["b"]).split(",")[3].split("'")
+            file_path=""
+            if 'ArtifactID' in all_objects[i]:
+                
+                
+                # getting the file type 
+                suffix= all_objects[i]['FieldValues'][0]["Value"]
+                
+                # getting the artifact id
+                artifact_id= str(all_objects[i]['ArtifactID'])
+                
+                
+                response = requests.get(url =
+                    'https://relativity-web/Relativity.Rest/API/Relativity.Document/workspace/'+gui_vars.get_workspace_id()+'/downloadnativefile/'+artifact_id,
+                    headers = head, verify = False)
     
-    return word[3]+" "
+                if response.status_code != 200:
+                    print("problem with response from relativity")
+                    break
+                
+                
+                file=open(gui_vars.get_dir_load()+artifact_id+"."+suffix.lower(),"wb")
+                file.write(response.content)
+                file.close()
+    
+      
+                file_path=gui_vars.get_dir_load()+artifact_id+"."+suffix.lower()
+                
+                text_extractor(window, top_info_label, top_progress_bar, top_start_label,file_path)
+            
+        except Exception as e:
+            
+            artifact_id= str(all_objects[i]['ArtifactID'])
+            # save failed
+            text = "failed to save "+e
+            gui_vars.saving_excel(artifact_id,text, "0")
+           
+            if update_relativity(artifact_id, text, False):
+                print("updated to relativity", text,e, str(all_objects[i]['ArtifactID']))
+                
+
+
+
 
 # the function gets the tk inter variables to update them.
 # files: a list of files the function receives, then iterates over them to
@@ -237,31 +244,37 @@ def text_extractor(window,top_info_label,top_progress_bar,top_start_label,file_p
 
     # server IP
     configuration = speechboard_api.Configuration(
-        host =  Server-IP
+        host = "http://172.16.40.25/speechboard/rest/v2"  # TODO: Change Server-IP
     )
     
     # API key
-    configuration.api_key['api_key'] = 
+    configuration.api_key['api_key'] = 'C828DD3F5FD0'  # TODO: Change API Key
     try:
         with speechboard_api.ApiClient(configuration) as api_client:
             # Create an instance of the API class
-
             api_instance = task_api.TaskApi(api_client)
-
-            artifact_id=tamlil_name.split(".")[0]
+            
             # settings for the request 
             # preset= which moudle will be used for the text
-. 
+            # enable_speaker_diarization the tool will try to differante between the callers and assign numbers 
+            # diarization_speaker_count -1 means the tool will try to understand on it's own how many people are in the 
+            # call, if the amount of people is known, we can write it instead. 
             request = RecognizeTaskRequest(
                 config=BatchRecognitionConfig(
                     preset="telephony-general",  # TODO: Choose 'general', 'telephony'
+                    enable_speaker_diarization = True,
+                    diarization_speaker_count= -1,
                 ),
             )
         
-
+    
+            artifact_id=tamlil_name.split(".")[0]
+           
+            # checking if it is a file
             top_info_label.config(text=tamlil_name+" in progress")
-            text= " "
-
+    
+            text = """דובר 1: """
+            speaker = 1
             try:
                 # Create new task
                 api_response = api_instance.create_task(request=request, file=bit_version)
@@ -270,104 +283,89 @@ def text_extractor(window,top_info_label,top_progress_bar,top_start_label,file_p
                 id = api_response.response.id
                 
                 
-                st = time.time()
-                accpeted= 0
-		# waiting for the status of the request to change to finished
-		# to extract the test from the repsonse 
+                
                 while (str(api_instance.get_task_by_id(id)["response"]["status"])!= "FINISHED"):
                     timlul_status = str(api_instance.get_task_by_id(id)["response"]["status"])
-
                     if timlul_status== "ACCEPTED":
-                        accpeted = time.time()
-                        formated_time="{:.2f}".format(accpeted-st)    
-                        print(tamlil_name,"accepted for",formated_time, "seconds")
+                        print(tamlil_name,"ACCEPTED")
                         time.sleep(3)
-                
-                    elif timlul_status == "IN_PROGRESS":
-                        et = time.time()
-                        formated_time="{:.2f}".format(et-accpeted)  
-                        print(tamlil_name,"in progress for",formated_time, "seconds")
+                    # dealing with timlul situations:
+                    elif timlul_status == "IN PROGRESS":
+                        print(tamlil_name,"IN PROGRESS")
                         time.sleep(3)
-		
-		    # checking if the system failed to read the file
-	            # usually means the file is corrupted 
                     elif timlul_status == "ERROR_EXPIRED":
                         success_marker = False
                         text = "corrupted file"
                         print(tamlil_name,text)
                         if update_relativity(artifact_id,text):
                             print("file {} was succesfully uploaded to Relativity".format(f)) 
-
-			# saving the error to a local excel as well
                         gui_vars.saving_excel(file_path,text)
                         break
-               
+                        
                 # making sure we are not coming from break statement before     
                 if success_marker == True:
                     
                    # iterating through the words and speaker tags to create a text with new lines for each talker
-                        try: 
-                            
-                            top_info_label.config(text="generating text for "+ tamlil_name)
-                            print("generating text for",tamlil_name)
-			    
-		            # converting the repsonse to a data frame to easily manipulate it 
-                            words_df = pd.DataFrame(api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"])
-                            
-                            
-                            words_df.columns=["words"]
+                    try: 
+                        
+                        top_info_label.config(text="generating text for "+ tamlil_name)
+                        print("generating text for",tamlil_name)
+                        for i in range(0,len(api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"]),2):
+                            k= i +1
+                            # if the speaker changed, creating a new line
+                            if(api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][i]["speaker_tag"]!= speaker):
+                                text=text+"\n"
+                                text=text+"דובר "+str(api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][i]["speaker_tag"])+": "
+                                text=text+api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][i]["word"]+ " "
+                                speaker = api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][i]["speaker_tag"]
+                            else:
+                                text=text+api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][i]["word"]+ " "
+                            try:    
+                                if(api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][k]["speaker_tag"]!= speaker):
+                                    text=text+"\n"
+                                    text=text+"דובר "+str(api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][k]["speaker_tag"])+": "
+                                    text=text+api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][k]["word"]+ " "
+                                    speaker = api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][k]["speaker_tag"]
+                                else:
+                                    text=text+api_instance.get_task_by_id(id)["response"]["response"]["results"][0]['nbests'][0]["words"][k]["word"]+ " "    
+                            except:
+                                continue     
+                
+   
 
-                            words_df["words"]=words_df.apply(splitter,axis=1)
-                            text= words_df["words"].sum()
-
-                            # updating relativity object with the extracted text
-                            if update_relativity(artifact_id,text):
-                                print("file {} was succesfully uploaded to Relativity".format(f)) 
+                        # updating relativity object with the extracted text
+                        if update_relativity(artifact_id,text):
+                            print("file {} was succesfully uploaded to Relativity".format(f)) 
 
                             
-                            
+
                     # the system failed to extract text from the record
-                        except:
-                           
-                            text= "no sound"
-                            # updating relativity object with the error text 
-
-                            if update_relativity(artifact_id,text):
-                                print("file {} error was succesfully uploaded to Relativity".format(f)) 
-
-      
-                            gui_vars.saving_excel(file_path, text)
-                            print("file" ,f +text)
-                            
+                    except:
+                        # updating relativity object with the error text 
+                        if update_relativity(artifact_id,"no sound"):
+                            print("file {} error was succesfully uploaded to Relativity".format(f)) 
+  
+                        gui_vars.saving_excel(file_path, "no sound")
+                        print("-------------------------!!!!-----------------------------")
+                        print(" Error probably not sound in file, moving to next file")
+                        print("-------------------------!!!!-----------------------------")
+                        pass
                     
                 
             
             # the api encountered an error
             except speechboard_api.ApiException as e:
-		text = "problem with timlul"
                 # updating relativity object with the error text 
-                if update_relativity(artifact_id,text ):
-                    print("file {} was succesfully uploaded to Relativity".format(f))
- 
-                gui_vars.saving_excel(file_path, text )
+                if update_relativity(artifact_id,"problem with timlul"):
+                    print("file {} was succesfully uploaded to Relativity".format(f)) 
+                gui_vars.saving_excel(file_path, "problem with timlul")
                 print("Exception when calling TaskApi->create_task: %s\n" % e)
     except:
-        text="problem with api"
-        if update_relativity(artifact_id,text):
-            print("file {} was succesfully uploaded to Relativity".format(f)) 
-
-        gui_vars.saving_excel(file_path, text)
-
-    # updating how many files finished
+        print("problem with api")
+        gui_vars.saving_excel(file_path, "problem with api")
     gui_vars.increase_files_count()
-
-    # updating the left label of the progress bar
     top_start_label.config(text=str(gui_vars.get_files_count()))
-
-    # updating the progress bar value
     top_progress_bar['value']=gui_vars.get_files_count()
-
-    # deleting the file locally so save space
     os.remove(file_path)
                 
 
@@ -396,7 +394,7 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
     if gui_vars.get_dir_load()=="":
         folder_error_label.config(text="CHOOSE A FOLDER",fg="red")
     else:    
-        folder_error_label.config(text="V")
+        folder_error_label.config(text=" ")
 
         gui_vars.set_error_path("errors//")
         global thread_entry
@@ -429,7 +427,7 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
             print("please enter workspace ID")
             
         else:
-            case_id_error_label.config(text="V", fg="green")
+            case_id_error_label.config(text=" ")
             gui_vars.set_workspace_id(str(workspace_id))
             warnings.catch_warnings()
             warnings.simplefilter("ignore")
@@ -439,11 +437,27 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
             create_folder(gui_vars.get_dir_load())
 
             create_folder(gui_vars.get_error_path())
-            # creating a request for the server
-            request_body={}
-
+            #Relativity get files for DIXI
+            dixi_body={
+               "Request":{
+                "ObjectType": {
+                "ArtifactTypeID": 10
+                    },
+                    "fields": [
+                    {"Name": "Original File Extension"},
+                    {"Name" : "Control Number"},
+                    ],
+                    "condition" : "'ICA_ETYPE' == True",
+                    "sorts":[
+                    ]
+                },
+                "start" : 0,
+                "length" : 25000
+            }
             top_info_label.config(text="in progress")    
-            response = requests.post(url =)
+            response = requests.post(url =
+                                     'https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/'+gui_vars.get_workspace_id()+'/object/query',
+                                     json = dixi_body,headers = head, verify = False)
             resp = response.json()
             
             info_download(window,top_info_label,top_progress_bar
@@ -538,4 +552,4 @@ def gui_configurtion():
 if __name__ == "__main__":
     gui_vars.st_init()
     gui_configurtion()
-
+       
