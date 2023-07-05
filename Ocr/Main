@@ -14,7 +14,7 @@ from PIL import Image, ImageFile
 from tkinter import Checkbutton, IntVar
 from pdf2image import convert_from_path,pdfinfo_from_path
 from pytesseract import image_to_osd, TesseractError
-from concurrent.futures import ThreadPoolExecutor
+from multiprocessing.pool import ThreadPool
 
 
 import re,time
@@ -231,20 +231,22 @@ def info_download(window,top_info_label,top_progress_bar
     else:
         threads = []
 
-        # calling the threadpoolexecutor to create threads by the number that the
-        # user decided on. 
-        with ThreadPoolExecutor(max_workers=gui_vars.get_workers()) as executor:
-            
+        # splitting the objects evenlly between the threads
+        for temp_list in [all_objects[i::gui_vars.get_workers()] for i in range(gui_vars.get_workers())]:
 
+            threads.append(pool.apply_async(files_download, (window,top_info_label,top_progress_bar
+                                                                                        ,top_start_label,top_end_label,
+                                                                                        temp_list)))
+            # making the thread wait 2 seconds so the system have time to process 
+            time.sleep(2)
 
-            for temp_list in [all_objects[i::gui_vars.get_workers()] for i in range(gui_vars.get_workers())]:
-                threads.append(executor.submit(files_download,window,top_info_label,top_progress_bar
-                                                                                            ,top_start_label,top_end_label,
-                                                                                            temp_list))
+        # waiting for all threads to complete
+        for thread in threads:
+            thread.get()
         
-                # making the thread wait 2 seconds so the system have time to process 
-                time.sleep(2)
-        
+        # cleaning up the pool
+        pool.close()
+        pool.join()
         
     # printing how much time the whole proccess took    
     et=time.time()
