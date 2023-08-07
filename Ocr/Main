@@ -27,9 +27,9 @@ import warnings
 import tkinter.filedialog
 
 
-# These line allow truncated images to be loaded.
+# this line allow truncated images to be loaded.
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-# These line set the maximum image pixels to 999999999.
+# this line set the maximum image pixels to 999999999.
 Image.MAX_IMAGE_PIXELS=999999999
 
 # creating a instance from the class to access the methods
