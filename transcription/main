@@ -60,7 +60,7 @@ def update_relativity(artifact_id,text):
                                 },
                                 {
                                     "Field":{
-                                    "Name":"ICA_ETYPE"
+                                    "Name":""
                                     },
                                     
     
