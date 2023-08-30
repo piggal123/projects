@@ -36,7 +36,6 @@ Image.MAX_IMAGE_PIXELS=999999999
 gui_vars=guiClass.gui_vars()
 # creating the window
 window = tk.Tk()
-window.title("רשות התחרות")
 window.geometry('380x400')
 
 
