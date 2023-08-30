@@ -32,8 +32,8 @@ no_thread_check_box = IntVar()
 no_download_check_box=IntVar()
 
 usrPass = ()
-b64Val = base64.urlsafe_b64encode(usrPass.encode('UTF-8')).decode('ascii')
-head = {'Content-Type':'application/json','X-CSRF-Header':'-','Authorization':'Basic %s' %b64Val}
+b64Val = 
+head = {}
 
 
 
