@@ -105,19 +105,6 @@ class myThread (threading.Thread):
              self.case_id_error_label,self.folder_error_label)
        
 
-# extracting the file name with it's extenstion from the data
-# returning the file name
-def make_file_name(file_data):
-    fields = file_data['FieldValues']
-    
-    # iterating through the file data 
-    for field in fields:
-        if field['Field']['Name'] == 'Original File Extension':
-            extension = field['Value']
-        elif field['Field']['Name'] == 'Control Number':
-            name = field['Value']
-    return name + "." + extension
-
 # downloading the files from relativity, updating the tk inter variables 
 def info_download(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
@@ -133,7 +120,7 @@ def info_download(window,top_info_label,top_progress_bar
     
     top_progress_bar['maximum']=len(all_objects)
     
-    # updaing the label to present what the program is doing
+    # updating the label to present what the program is doing
     top_info_label.config(text="getting info")
     
     # getting the objects from the response
@@ -260,7 +247,7 @@ def text_extractor(window,top_info_label,top_progress_bar,top_start_label,file_p
             # call, if the amount of people is known, we can write it instead. 
             request = RecognizeTaskRequest(
                 config=BatchRecognitionConfig(
-                    preset="telephony-general",  # TODO: Choose 'general', 'telephony'
+                    preset="telephony-general", 
                     enable_speaker_diarization = True,
                     diarization_speaker_count= -1,
                 ),
@@ -289,7 +276,7 @@ def text_extractor(window,top_info_label,top_progress_bar,top_start_label,file_p
                         print(tamlil_name,"ACCEPTED")
                         time.sleep(3)
                     # dealing with timlul situations:
-                    elif timlul_status == "IN PROGRESS":
+                    elif timlul_status == "IN_PROGRESS":
                         print(tamlil_name,"IN PROGRESS")
                         time.sleep(3)
                     elif timlul_status == "ERROR_EXPIRED":
@@ -362,6 +349,7 @@ def text_extractor(window,top_info_label,top_progress_bar,top_start_label,file_p
     except:
         print("problem with api")
         gui_vars.saving_excel(file_path, "problem with api")
+
     gui_vars.increase_files_count()
     top_start_label.config(text=str(gui_vars.get_files_count()))
     top_progress_bar['value']=gui_vars.get_files_count()
@@ -446,7 +434,7 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
                     {"Name": "Original File Extension"},
                     {"Name" : "Control Number"},
                     ],
-                    "condition" : "'ICA_ETYPE' == True",
+                    "condition" : "'' == True",
                     "sorts":[
                     ]
                 },
@@ -465,8 +453,10 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
         
 #getting the folder path from the user
 def get_folder_path(window,folder_error_label):
-    
+
+    # asking the user to choose a folder
     gui_vars.set_dir_load(tk.filedialog.askdirectory())
+
     # updating the gui to show if the user chose a folder
 
     if(gui_vars.get_dir_load()==""):
