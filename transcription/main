@@ -204,12 +204,12 @@ def files_download(window,top_info_label,top_progress_bar
                     print("problem with response from relativity")
                     break
                 
-                
+                # saving the file locally 
                 file=open(gui_vars.get_dir_load()+artifact_id+"."+suffix.lower(),"wb")
                 file.write(response.content)
                 file.close()
     
-      
+      		# saving the file path to pass as parameter 
                 file_path=gui_vars.get_dir_load()+artifact_id+"."+suffix.lower()
                 
                 text_extractor(window, top_info_label, top_progress_bar, top_start_label,file_path)
@@ -243,11 +243,11 @@ def text_extractor(window,top_info_label,top_progress_bar,top_start_label,file_p
 
     # server IP
     configuration = speechboard_api.Configuration(
-        host = "http://172.16.40.25/speechboard/rest/v2"  # TODO: Change Server-IP
+        host = ""
     )
     
     # API key
-    configuration.api_key['api_key'] = 'C828DD3F5FD0'  # TODO: Change API Key
+    configuration.api_key['api_key'] = ''  
     try:
         with speechboard_api.ApiClient(configuration) as api_client:
             # Create an instance of the API class
