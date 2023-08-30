@@ -26,7 +26,6 @@ from speechboard_api.model.batch_recognition_config import BatchRecognitionConfi
 gui_vars=guiClassN.gui_vars()
 # creating the window
 window = tk.Tk()
-window.title("רשות התחרות")
 window.geometry('420x350')
 
 no_thread_check_box = IntVar()
