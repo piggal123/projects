@@ -102,14 +102,19 @@ def appLayout():
             )    
     #definning the buttons        
     eB=html.Button("עדכן מעורבים", id="updateEntity", n_clicks=0, className="me-5")
-    #display= none means the button won't be shown. the button is there just to align the
-    #items better, it won't be shown
+
     fillerB=html.Button(id="filler",className="me-5",style = dict(display='none'))
+
     fillerBu=html.Button(id="fillerB",className="me-5",style = dict(display='none'))
+
     tB=html.Button("עדכן זמנים", id="updateTime", n_clicks=0, className="me-5" )
+
     gB=html.Button("עדכן גרף", id='update-btn', n_clicks=0,className="mt-3"),
+
     fB=html.Button("בחר קובץ", id='changeFile', n_clicks=0,className="mt-3"),
+
     cB=html.Button("communities:off", id="communitySwitch", n_clicks=0,className="mt-3 border border-3"),
+
     app.layout = dbc.Container([
         html.Div(style={'width': '90%', 'display': 'inline-block'},children=[
         html.Img(src=pil_image, style={"float":"left"}),
@@ -136,8 +141,9 @@ def appLayout():
 
 
 
-        #these divs will be filled with the relevant text from the nodes and edges when 
-        #specific actions are executed 
+        # these divs will be filled with the relevant text from the nodes and edges when 
+        # specific actions are executed 
+
         html.Div(html.Div(id="nodeInfo"),id="nodeWrapper",style={"width" : "100%","text-align":"center",'display': 'inline-block'}),
         html.Div(id="edgeInfo", style={"width" : "100%","text-align":"center",'display': 'inline-block'}),
         html.Div(id="edgeClick",style={"width" : "100%","text-align": "center",'display': 'inline-block'}),
@@ -165,9 +171,9 @@ def appLayout():
     app.run_server(debug= False ,use_reloader=False)
 
 
-#the function generate the time options for the drop box. 
-#the function gets a dataframe, iterate through it and
-#return a list of string that represent time
+# the function generate the time options for the drop box. 
+# the function gets a dataframe, iterate through it and
+# return a list of string that represent time
 def timeOptionsGenerator(df):
     dateList=[]
     dateList.append("הכל")
