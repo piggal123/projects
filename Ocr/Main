@@ -18,8 +18,6 @@ from multiprocessing.pool import ThreadPool
 
 
 import re,time
-
-
 import requests
 import base64
 import warnings
@@ -172,10 +170,7 @@ def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_la
     top_info_label.config(text="extracting text")  
 
     artifact_id= os.path.basename(file_path).split(".")[0]
-
     text = " "
-
-    # checking if the file is pdf
 
     try:
         
@@ -213,8 +208,6 @@ def info_download(window,top_info_label,top_progress_bar
     top_end_label.config(text=str(len(all_objects)))
     top_progress_bar['maximum']=len(all_objects)
     top_info_label.config(text="getting info")
-
-        
     top_info_label.config(text="downloading files")
 
     top_start_label.config(text=("0"))   
@@ -285,9 +278,7 @@ def files_download(window,top_info_label,top_progress_bar
                     print("problem with response from relativity")
                     break
                 # trying to save the file
-                
-    
-                
+                               
                 if all_objects[i]['FieldValues'][0]["Value"] != "PDF":
             
                     img = Image.open(BytesIO(response.content))
@@ -302,12 +293,10 @@ def files_download(window,top_info_label,top_progress_bar
                     file.write(response.content)
                     file.close()
         
-        
                 top_start_label.config(text=str(i+1))   
                 top_progress_bar['value']=i+1    
                 file_path=gui_vars.get_dir_load()+artifact_id+".pdf"
-                
-                
+                   
                 extractor(window, top_info_label, top_progress_bar, top_start_label, top_end_label, file_path) 
                     
         except:
@@ -319,18 +308,11 @@ def files_download(window,top_info_label,top_progress_bar
             if update_relativity(artifact_id, text, False):
                 print("updated to relativity, failed to save "  + str(all_objects[i]['ArtifactID']))
 
-            
-        
-
-
 # recreating the folders to clear the data inside
 def create_folder(folder):
     # creating the folder if it doesn't exists
     if not os.path.exists(folder):
         os.makedirs(folder)
-        
- 
-
 
 def start(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
@@ -367,7 +349,6 @@ def checker(window,top_info_label,top_progress_bar
         # clearing the message
         folder_error_label.config(text=" ")
         
-
         psm=psm_entry.get()
         
         # checking the input for the dpi resolution 
@@ -432,12 +413,9 @@ def checker(window,top_info_label,top_progress_bar
                 gui_vars.set_error_path("rotated//errors//")
 
                 create_folder(gui_vars.get_rotated_path())
-                
-                    
+                         
             create_folder(gui_vars.get_error_path())
             folder_error_label.config(text="V", fg="green")
-     
-
                 
             # creating a request for the server
             request_body={}
@@ -446,8 +424,6 @@ def checker(window,top_info_label,top_progress_bar
             response = requests.post(url =)
             
             resp = response.json()
-
-            
 
             info_download(window,top_info_label,top_progress_bar
                                                                                        ,top_start_label,top_end_label,
@@ -525,23 +501,18 @@ def gui_configurtion():
     psm_entry = tk.Entry(window, width=4)
     psm_entry.grid(row= 11, column =2)
     
-    
     dpi_label = tk.Label(text="dpi", font=font_text)
     dpi_label.place(x=120,y=240)
     
     dpi_entry=tk.Entry(window, width=4)
     dpi_entry.grid(row=12, column=2, pady = 10)
-    
-    
+
     thread_label= tk.Label(text="threads(1-15)", font=font_text)
     thread_label.place(x=60,y=270)
-    
 
 
     thread_entry=tk.Entry(window, width=5)
     thread_entry.grid(row=13,column=2)
-    
-
 
     folder_error_label = tk.Label(text="", font=font_text)
     folder_error_label.place(x=255,y = 300)
@@ -556,7 +527,6 @@ def gui_configurtion():
                                                                                ,thread_entry,psm_entry))
     start_button.grid(row=15,column = 2)
 
-    
     window.focus()
     window.mainloop()
     
