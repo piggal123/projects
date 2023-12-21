@@ -46,32 +46,9 @@ head = {}
 def update_relativity(artifact_id,text):
     
     update_body = {
-                        "Request":{
-                            "Object": {
-                                "ArtifactID": artifact_id
-                            },
-                            "FieldValues": [
-                                {
-                                "Field":
-                                    {
-                                    "Name" : "Extracted Text" #Extracted text
-                                    },
-                                    "Value": text
-                                },
-                                {
-                                    "Field":{
-                                    "Name":""
-                                    },
-                                    
-    
-                                    "Value": False
-                                    } 
-                            ]
-                        }
+
                     }
-    j = requests.post(url =
-                          'https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/'+gui_vars.get_workspace_id()+'/object/update', 
-                          json = update_body,headers = head, verify = False)
+    j = requests.post(url =" ",   son = update_body,headers = head, verify = False)
     if j.ok:
         return True
     else:
@@ -425,7 +402,7 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
 
             create_folder(gui_vars.get_error_path())
             #Relativity get files for DIXI
-            dixi_body={
+            request_body={
                "Request":{
                 "ObjectType": {
                 "ArtifactTypeID": 10
@@ -442,9 +419,8 @@ def checker(window, top_info_label,top_progress_bar,top_start_label,top_end_labe
                 "length" : 25000
             }
             top_info_label.config(text="in progress")    
-            response = requests.post(url =
-                                     'https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/'+gui_vars.get_workspace_id()+'/object/query',
-                                     json = dixi_body,headers = head, verify = False)
+            response = requests.post(url =" ",
+                                     json = request_body,headers = head, verify = False)
             resp = response.json()
             
             info_download(window,top_info_label,top_progress_bar
