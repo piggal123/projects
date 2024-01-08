@@ -1,5 +1,10 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Thu Dec  1 10:32:05 2022
 
-import cv2
+@author: gals
+"""
+#import cv2
 import os
 import pytesseract
 import guiClass
@@ -13,11 +18,14 @@ from PIL import Image, ImageFile
 
 from tkinter import Checkbutton, IntVar
 from pdf2image import convert_from_path,pdfinfo_from_path
-from pytesseract import image_to_osd, TesseractError
+
+
 from multiprocessing.pool import ThreadPool
 
 
-import re,time
+import time,re
+
+
 import requests
 import base64
 import warnings
@@ -25,25 +33,28 @@ import warnings
 import tkinter.filedialog
 
 
-# this line allow truncated images to be loaded.
+# These line allow truncated images to be loaded.
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-# this line set the maximum image pixels to 999999999.
+# These line set the maximum image pixels to 999999999.
 Image.MAX_IMAGE_PIXELS=999999999
 
 # creating a instance from the class to access the methods
 gui_vars=guiClass.gui_vars()
 # creating the window
 window = tk.Tk()
+window.title("רשות התחרות")
 window.geometry('380x400')
 
-
+warnings.catch_warnings()
+warnings.simplefilter("ignore")
 no_thread_check_box = IntVar()
-rotate_check_box=IntVar()
+no_rot=IntVar()
+
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
 
-
+# UPDATE BACK TO RELATIVITY ########################################################
 # artifact_id: the identification id of the file in the relativity system 
 # text: the text of the extracted record
 # condition: whenever the proccess failed (false) or succeed (true) 
@@ -51,15 +62,17 @@ pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tessera
 # in relativity. if it fails, the excel will be updated otherwise will return
 # true
 def update_relativity(artifact_id,text, condition):
-    
-    # creating a request to the data base to update the 
-    # relevant fields 
+ 
+    update_body = {
+                    # update request to relativity
+                    }
+    j = requests.post(# url request)
     if j.ok:
         return True
     else:
   
         # updating the excel to show the text failed to be uploaded
-        gui_vars.saving_excel(artifact_id,"failed to upload")
+        gui_vars.saving_excel(artifact_id,"failed to upload", "0")
         print("ERROR:", artifact_id, " failed to upload")
         return False
 
@@ -68,9 +81,9 @@ def update_relativity(artifact_id,text, condition):
 # setting the thread
 class myThread (threading.Thread):
     def __init__(self, name,window, top_info_label,top_progress_bar,top_start_label,top_end_label,
-    workspace_error_label,psm_error_label
+    workspace_error_label
    ,folder_error_label,dpi_entry,workspace_id_entry
-   ,thread_entry,psm_entry):
+   ,thread_entry,psm_entry,run_label,second_thread):
       threading.Thread.__init__(self)
       self.name = name
       self.window = window
@@ -80,33 +93,113 @@ class myThread (threading.Thread):
       self.top_end_label=top_end_label
       self.dpi_entry=dpi_entry
       self.workspace_error_label=workspace_error_label
-      self.psm_error_label=psm_error_label
+      self.run_label= run_label
       self.folder_error_label=folder_error_label
       self.workspace_id_entry=workspace_id_entry
       self.thread_entry=thread_entry
       self.psm_entry=psm_entry
+      self.second_thread = second_thread
     def run(self):
-        if self.name=="checker":
-            checker(self.window,self.top_info_label,self.top_progress_bar,self.top_start_label,self.top_end_label,
-            self.workspace_error_label,self.psm_error_label,self.folder_error_label,self.dpi_entry,self.workspace_id_entry,
-                  self.thread_entry,self.psm_entry)
+
+        checker(self.window,self.top_info_label,self.top_progress_bar,self.top_start_label,self.top_end_label,
+        self.workspace_error_label,self.folder_error_label,self.dpi_entry,self.workspace_id_entry,
+              self.thread_entry,self.psm_entry,self.name,self.run_label,self.second_thread)
 
 
-# the method receives tk inter variables and updates them. the function will then
-# call the text_extractor function to start the extraction from them records.
+# the function checks if the text is gibberish or contains
+# real words
+# text- the text that being checked
+# returns whenever it's gibberish or real text
+
+def is_language(text):
+
+    # cleaning the text from non english chars
+    cleaned_en_text = re.sub(r'[^a-zA-Z]', ' ', text).lower()
+    
+    # cleaning the text from non hebrew chars
+    cleaned_he_text=re.sub(r'[a-zA-Z\d|./):~]', ' ', text)
+    # Split the text into words
+    en_words_list = cleaned_en_text.split()
+    heb_words_list=cleaned_he_text.split()
+    
+
+    english_words=""
+    
+    # loading the english words from the file
+    with open(r"C:\ForGal\OCR\ocrwithpdf\words.txt", 'r') as file:
+        english_words = set(file.read().split())
+    
+    hebrew_words=""
+    
+    # loading the hebrew words from the file
+    with open(r"C:\ForGal\OCR\ocrwithpdf"+"//"+"hebrew_words.txt","r", encoding="utf-8") as file:
+        hebrew_words= set(file.read().split())        
+
+
+    total_en_words = len(en_words_list)
+    total_heb_words = len(heb_words_list)
+    
+    # checking if the text from the file is empty
+    if(total_en_words == 0 and total_heb_words == 0):
+        
+        return True
+    
+    else:    
+        # summing up the amount of non english words
+        non_english_words = sum(1 for word in en_words_list if word not in english_words)
+        
+        # checking if there aren't any english words
+        if total_en_words == 0 :
+            
+            # setting the ratio so it won't interfere with the result later
+            en_gibberish_ratio = 0.6
+            
+        else:    
+            
+            # checking what is the ratio of non english words to the total
+            # amount of the words
+            en_gibberish_ratio = non_english_words / total_en_words
+        
+        # summing up the amount of non hebrew words
+        non_hebrew_words = sum(1 for word in heb_words_list if word not in hebrew_words)
+        
+        # checking if there aren't any hebrew words
+        if total_heb_words == 0:
+            
+           # setting the ratio so it won't interfere with the result later 
+           heb_gibberish_ratio= 0.8
+           
+        else:   
+            # checking what is the ratio of non hebrew words to the total
+            # amount of the words
+            heb_gibberish_ratio = non_hebrew_words / total_heb_words
+
+    if en_gibberish_ratio < 0.5 or heb_gibberish_ratio < 0.7:
+  
+        return True
+
+    else:
+        return False
 
 
 # the fuction gets an image and a page number,
 # then checks the angle and rotate it to the normal
 # one. the function returns the rotated image
-def rotate_images(file,img):
+def rotate_images(img,number):
 
     try:
-        angle_rotation = pytesseract.image_to_osd(image=img,output_type=pytesseract.Output.DICT)['orientation']
-        return img.rotate(angle_rotation)
+        if number == 0:
+            
+            angle_rotation = pytesseract.image_to_osd(image=img,config="-c min_characters_to_try=5",output_type=pytesseract.Output.DICT)['orientation']
+      
+            return img.rotate(angle_rotation,expand=True)
+        else:
 
+            return(img.rotate(90*(number),expand=True))
+ 
         
-    except TesseractError as e:
+
+    except pytesseract.TesseractError as e:
         print("tesseracterror:",e)
         return img
     
@@ -115,79 +208,210 @@ def rotate_images(file,img):
         return img
 
 
+# the function rotate the image until the pytesseract returns a
+# result which isn't gibberish. if after 8 rotation the text is
+# gibberish, will return false
+# image - the image that is being rotated and the text from it is
+# extracted
+# returns the text that was found, if it managed to find text
+# and how many times the picture was rotated
+
+def iterator(image):
+    counter = 0
+    found_text= False
+    text= " "
+    
+    # checking if the user checked the fast check box
+    if no_rot.get()==1:
+        image = rotate_images(image,0)
+    
+
+        text = pytesseract.image_to_string(image,'heb+eng',config="--psm  "+gui_vars.get_psm()+"--oem 3") 
+        
+        # checking if the text isn't gibberish or empty
+        if(is_language(text) and text !=""):
+            
+            found_text=True
+         
+    # the user wants the slow and safe method        
+    else:
+        
+
+        for k in range(4):
+    
+            image = rotate_images(image,k)
+        
+    
+            text = pytesseract.image_to_string(image,'heb+eng',config="--psm  "+gui_vars.get_psm()+"--oem 3") 
+            
+            # checking if the text isn't gibberish or empty
+            if(is_language(text) and text !=""):
+                
+                found_text=True
+                
+                break
+            
+        counter +=1
+    
+        
+        if not found_text:
+            
+    
+            for k in range(4):
+    
+                image = rotate_images(image,k)
+            
+                # checking which mode the user chose. if it's 11, will change to 6
+                if gui_vars.get_psm()=="11":
+                    
+                    text = pytesseract.image_to_string(image,'heb+eng',config="--psm 6 --oem 3") 
+                    
+                # the user chose 6, changing to 11    
+                else:
+                    
+                    text = pytesseract.image_to_string(image,'heb+eng',config="--psm 11 --oem 3") 
+                
+                # checking if the text isn't gibberish or empty
+                if(is_language(text) and text !=""):
+    
+                    found_text=True
+                    
+                    break
+                
+            counter +=1  
+        
+    return  text, found_text, counter
+
 # the function gets a file path of pdf file and it's name,
 # rotating the pdf pages and extracting the text
 # file_path= the path of the pdf file
 # image_name = the name of the pdf file
 # the function returns the text from the pdf
 def rotate(file_path, image_name):
-  
+    counter = 0
     pdf2image=[]
-    
-    # getting info from the pdf, checking how many pages it has
-    info = pdfinfo_from_path(file_path,poppler_path= r"C:\ForGal\OCR\poppler-23.01.0\Library\bin")
+    try:
+        # getting info from the pdf, checking how many pages it has
+        info = pdfinfo_from_path(file_path,poppler_path=path to poppler)
+    except:
+        return ("pdf corrupted",False, 0)
     max_pages = info["Pages"]
-    
-    # itertating through the pdf, changing it to pdf2image type
+
     for page in range(1, max_pages+1, 10) : 
-        pdf2image+=convert_from_path(file_path, dpi=gui_vars.get_dpi(),poppler_path= r"C:\ForGal\OCR\poppler-23.01.0\Library\bin", first_page=page, last_page = min(page+10-1,max_pages))
+        pdf2image+=convert_from_path(file_path, dpi=gui_vars.get_dpi(),poppler_path= path to poppler, first_page=page, last_page = min(page+10-1,max_pages))
     
     text= " "
-    
+    found_text= False
+    final_text= " "
     # iterating through the images, rotating them until the orientation 
     # is correct, then extracting the text
     for i in range(len(pdf2image)):   
-
-        pdf2image[i] = rotate_images(image_name,pdf2image[i])
         
-        
-        # saving the image locally to extract the text from it
-        pdf2image[i].save(gui_vars.get_dir_load()+"//"+image_name +".jpg", 'JPEG')
-        with Image.open(gui_vars.get_dir_load()+"//"+image_name +".jpg") as img:
-               
-            img.load()
-            # setting which languages we expect to see in the pictures so the text is saved correctly
-            text += pytesseract.image_to_string(img,'heb+eng+ara',config="--psm --dpi 300"+gui_vars.get_psm()) 
+        text, found_text, counter = iterator(pdf2image[i])
+        if (i%10==0):
+            file_name=file_path.split("/")
+            print("rotating file",file_name[-1],"page",i)
+        final_text+= text
+    return final_text,found_text, counter
+  
     
-    #deleting the image once we are done with it
-    try:
-        os.remove(gui_vars.get_dir_load()+"//"+image_name +".jpg")
+def rotate_image(file_path,thread_name):
+    
+    counter = 0
+    
+    found_text= False
+    text = " "
+    
+    # checking if it's the first iteration
+    if thread_name == "first":
+        image=Image.open(file_path)
         
-    except:
-        # the deletion failed
-        print("Failed to delete", gui_vars.get_dir_load()+"//"+image_name +".jpg")
+        text, found_text, counter = iterator(image)
+    
+    # it isn't the first one
+    else:
         
-    return text
-     
+        image=Image.open(file_path)
+        saving_name=file_path.split(".")
+        
+        # increasing the image's dpi in order to help the pytesseract
+        if (gui_vars.get_dpi()<300):
+            
+            image.save(saving_name[0]+"1."+saving_name[1], dpi=(300, 300))
+        else:
+            image.save(saving_name[0]+"1."+saving_name[1], dpi=(gui_vars.get_dpi()+300, gui_vars.get_dpi()+300))
+            
+        imag=Image.open(saving_name[0]+"1."+saving_name[1])
+        
+        text, found_text, counter = iterator(imag)
+    
+        # deleting the new photo
+        try:
+            os.remove(saving_name[0]+"1."+saving_name[1])  
+            
+        except:
+            
+            print("failed to delete", saving_name[0]+"1."+saving_name[1])
+            
+    return text, found_text, counter
+
+
 # the method receives all of the tkinter variables, including a list of files to iterate
 # through. the method will iterate the files, converting them to a readable pdf, saving them
 # in the result folder. 
-def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_label,file_path):
-
+def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_label,file_path,suffix,thread_name):
+    counter = 0
     top_start_label.config(text=str(gui_vars.get_ocred_files_count()))
     top_progress_bar['value']=gui_vars.get_ocred_files_count()
 
     top_info_label.config(text="extracting text")  
 
+
     artifact_id= os.path.basename(file_path).split(".")[0]
+    
+
     text = " "
 
+    # checking if the file is pdf
+
     try:
-        
+
         # extracting the text with roate method
-        text = rotate(file_path, artifact_id)
-
-        if update_relativity(artifact_id,text, True):
-            print("file {} was succesfully uploaded to Relativity".format(artifact_id))
+        if(suffix=="PDF"):
      
-    # the extraction failed        
-    except:
-          text = "tesseract failed"
-          print(text)
-          if update_relativity(artifact_id,text, False):
-              print("file {} tesseract failed".format(artifact_id)) 
-          gui_vars.saving_excel(artifact_id,text)    
-
+            text, success, counter = rotate(file_path, artifact_id)
+    
+        else:
+            
+            text, success, counter= rotate_image(file_path,thread_name)
+            
+        if(success and text != ""):  
+            
+            if update_relativity(artifact_id,text, True):
+                
+               # print("file {} was succesfully uploaded to Relativity".format(artifact_id))
+               pass 
+        else:
+            
+            text= "failed to find text"
+            
+            if update_relativity(artifact_id,text, False):
+                
+               # print("{} failed to find text".format(artifact_id))
+                pass
+    #the extraction failed        
+    except Exception as e:
+       
+        text = "tesseract failed " +str(e)
+        
+        
+        if update_relativity(artifact_id,text, False):
+            pass 
+            #print("file {}".format(artifact_id), text) 
+            
+            
+    gui_vars.saving_excel(artifact_id,text, counter)        
+            
     # deleting the file once we are done with it
     os.remove(file_path)
     
@@ -196,11 +420,15 @@ def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_la
     top_progress_bar['value']=gui_vars.get_ocred_files_count()
 
 
+
 # downloading the files from relativity, updating the tk inter variables 
 def info_download(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
-                                                                           resp):
+                                                                           resp,thread_name,run_label,second_thread):
 
+    if thread_name=="second":
+        run_label.config(text="second iteration")
+        
     top_info_label.config(text="in progress")
     all_objects = resp['Objects']
     
@@ -208,6 +436,8 @@ def info_download(window,top_info_label,top_progress_bar
     top_end_label.config(text=str(len(all_objects)))
     top_progress_bar['maximum']=len(all_objects)
     top_info_label.config(text="getting info")
+
+        
     top_info_label.config(text="downloading files")
 
     top_start_label.config(text=("0"))   
@@ -217,26 +447,23 @@ def info_download(window,top_info_label,top_progress_bar
     # checking if the threads check box was checked
     if no_thread_check_box.get()==1:
         files_download(window,top_info_label,top_progress_bar
-                                                                                       ,top_start_label,top_end_label,all_objects)
+                                                                                       ,top_start_label,top_end_label,all_objects,thread_name)
         
     # it wasn't checked    
     else:
+        pool = ThreadPool(processes=gui_vars.get_workers())
         threads = []
-
-        # splitting the objects evenlly between the threads
+        
         for temp_list in [all_objects[i::gui_vars.get_workers()] for i in range(gui_vars.get_workers())]:
-
             threads.append(pool.apply_async(files_download, (window,top_info_label,top_progress_bar
                                                                                         ,top_start_label,top_end_label,
-                                                                                        temp_list)))
-            # making the thread wait 2 seconds so the system have time to process 
-            time.sleep(2)
-
-        # waiting for all threads to complete
+                                                                                        temp_list,thread_name)))
+        
+        # Wait for all threads to complete
         for thread in threads:
             thread.get()
         
-        # cleaning up the pool
+        # Clean up the pool
         pool.close()
         pool.join()
         
@@ -246,98 +473,183 @@ def info_download(window,top_info_label,top_progress_bar
   
     print("took",formated_time,"seconds")
     top_info_label.config(text="done")
-    print('done')        
+    print('done') 
+    if thread_name=="first" and no_rot.get()==0:       
+        second_thread.start()
 
-# the function proccess the image with dilation and erosion
-# image - the function receives an image
-# return - the function returns the proccessed image 
-def dilate_erode_image(image):
-
-    image = np.asarray(image,dtype="uint8")
-    kernel = np.ones((1,1),np.uint8)
-    image = cv2.dilate(image,kernel,iterations=1)
-    image = cv2.erode(image,kernel,iterations=1)
-    image = Image.fromarray(np.uint8(image))
-    return image
 
 # downloading the files from relativity, updating the tk inter variables 
 def files_download(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
-                                                                            all_objects):
+                                                                            all_objects,thread_name):
 
     # iterating through the list with artifact id to download the files
-    
+    supported_format_list=["PNG","JEPG","BMP","JPG","JPEG","GIF","ICO","EPS"]
     for i in range(len(all_objects)):
         try:
+             
+            # checking if there is artifact id in the objects
+            file_path=""
             if 'ArtifactID' in all_objects[i]:
-            
+                
+                # skipping the files that failed because of error which is
+                # not a tesseract error
+                try:
+                    if thread_name=="second" and all_objects[i]['FieldValues'][2]["Value"] != "failed to find text": 
+                        #print("skipped")
+                        gui_vars.increase_ocred_files_count()  
+                        continue
+                except: 
+                    #print(all_objects[i]['FieldValues'])
+                    #print(all_objects[i]['FieldValues'][2])
+                    pass
+                    
+                # getting the file type 
+                suffix= all_objects[i]['FieldValues'][0]["Value"]
+                
+                # getting the artifact id
                 artifact_id= str(all_objects[i]['ArtifactID'])
-                response = requests.get(url =)
+                                
+                response = requests.get(# request url)
     
                 if response.status_code != 200:
-                    print("problem with response from relativity")
-                    break
-                # trying to save the file
-                               
-                if all_objects[i]['FieldValues'][0]["Value"] != "PDF":
+                    
+                    # checking what is the repsonse error text
+                    error_code_text=" "
+                    try:
+                        
+                        # getting the text
+                        text=response.text.split(":")
+                        error_code_text=text[3].replace("}","")
+                        error_code_text=error_code_text.replace('"','')
+                        error_code_text=error_code_text+" error code: " + str(response.status_code)
+                    
+                    # failed to get the error text    
+                    except:
+                        error_code_text="error code: " + str(response.status_code)
+                        
+                    print(error_code_text, "artifact id:",artifact_id)    
+    
+                        
+                    gui_vars.increase_ocred_files_count()
+                    gui_vars.saving_excel(artifact_id,error_code_text)
+                    
+                    # updating relativity   
+                    if update_relativity(artifact_id, error_code_text, False):
+                        print("updated to relativity", error_code_text, str(all_objects[i]['ArtifactID']))
+               
+                    continue
+                
+                
+    
+    		        # checking if the file isn't pdf or the supported picture format                
+                if suffix not in supported_format_list and suffix!= "PDF":
             
                     img = Image.open(BytesIO(response.content))
     
                     pdf = img.convert('RGB')
                     #pdf = dilate_erode_image(pdf)
-                    pdf.save(gui_vars.get_dir_load()+artifact_id+".pdf",'PDF',resolution=300)
+                    if thread_name=="first":
+                         
+                        # saving the picture as pdf 
+                        pdf.save(gui_vars.get_dir_load()+artifact_id+".pdf",'PDF',resolution=gui_vars.get_dpi())
+                        
+                    else:
+                        
+                        # checking if the user didn't choose a dpi higher than the default
+                        
+                        if (gui_vars.get_dpi()<300):
+                            
+                            pdf.save(gui_vars.get_dir_load()+artifact_id+".pdf",'PDF',resolution=300)
+                            
+                        # the user chose a higher dpi, increasing the picture dpi as a result for the second
+                        # run
+                        else:
+                            pdf.save(gui_vars.get_dir_load()+artifact_id+".pdf",'PDF',resolution=gui_vars.get_dpi()+300)
+                            
+                    file_path=gui_vars.get_dir_load()+artifact_id+".pdf"
+                
+                # the file is in the supported picture format
+                elif suffix in supported_format_list:    
                     
-    
-                else:    
-                    file = open(gui_vars.get_dir_load()+artifact_id+".pdf","wb")
+                    file=open(gui_vars.get_dir_load()+artifact_id+"."+suffix.lower(),"wb")
                     file.write(response.content)
                     file.close()
-        
-                top_start_label.config(text=str(i+1))   
-                top_progress_bar['value']=i+1    
-                file_path=gui_vars.get_dir_load()+artifact_id+".pdf"
-                   
-                extractor(window, top_info_label, top_progress_bar, top_start_label, top_end_label, file_path) 
                     
-        except:
+                    file_path=gui_vars.get_dir_load()+artifact_id+"."+suffix.lower()
+                    
+                # the file is pdf    
+                else:
+    
+                    file = open(gui_vars.get_dir_load()+artifact_id+".pdf","wb")
+    
+                    file.write(response.content)
+                    file.close()
+                    file_path=gui_vars.get_dir_load()+artifact_id+".pdf"
+        
+                
+                extractor(window, top_info_label, top_progress_bar, top_start_label, top_end_label, file_path,suffix,thread_name) 
+                        
+        except Exception as e:
+          
+           artifact_id= str(all_objects[i]['ArtifactID'])
+           # save failed
+           text = "failed to save "+str(e)
+           gui_vars.saving_excel(artifact_id,text, "0")
+         
+           if update_relativity(artifact_id, text, False):
+               print("updated to relativity", text, str(all_objects[i]['ArtifactID']))
+              
+           gui_vars.increase_ocred_files_count()    
+           top_start_label.config(text=str(gui_vars.get_ocred_files_count()))
+           top_progress_bar['value']=gui_vars.get_ocred_files_count()    
+          
 
-            artifact_id= str(all_objects[i]['ArtifactID'])
-            # save failed
-            text = "failed to save"
-            gui_vars.saving_excel(artifact_id,text)
-            if update_relativity(artifact_id, text, False):
-                print("updated to relativity, failed to save "  + str(all_objects[i]['ArtifactID']))
+
 
 # recreating the folders to clear the data inside
 def create_folder(folder):
     # creating the folder if it doesn't exists
     if not os.path.exists(folder):
         os.makedirs(folder)
+        
+ 
+
 
 def start(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
-                                                                            workspace_error_label,psm_error_label
+                                                                            workspace_error_label
                                                                            ,folder_error_label,dpi_entry,workspace_id_entry
-                                                                           ,thread_entry,psm_entry):
+                                                                           ,thread_entry,psm_entry,run_label):
     
-    # resetting the gui values 
-    gui_vars.reset_all()
-    
-    checker_thread = myThread("checker",window,top_info_label,top_progress_bar
-                                                                               ,top_start_label,top_end_label,
-                                                                                workspace_error_label,psm_error_label
-                                                                               ,folder_error_label,dpi_entry,workspace_id_entry
-                                                                               ,thread_entry,psm_entry)
-    
-    checker_thread.start()
 
+    
+    second_run_thread=myThread("second",window,top_info_label,top_progress_bar
+                                                                               ,top_start_label,top_end_label,
+                                                                                workspace_error_label
+                                                                               ,folder_error_label,dpi_entry,workspace_id_entry
+                                                                               ,thread_entry,psm_entry,run_label, " ")
+    
+
+    first_run_thread = myThread("first",window,top_info_label,top_progress_bar
+                                                                               ,top_start_label,top_end_label,
+                                                                                workspace_error_label
+                                                                               ,folder_error_label,dpi_entry,workspace_id_entry
+                                                                               ,thread_entry,psm_entry,run_label,second_run_thread)
+    
+    first_run_thread.start()
 # the function receives the tkinter variables, updating them through the process
 # the function will call the info_download thread to start downloading the files
 def checker(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
-                                                                            workspace_error_label,psm_error_label
+                                                                            workspace_error_label
                                                                            ,folder_error_label,dpi_entry,workspace_id_entry
-                                                                           ,thread_entry,psm_entry):
+                                                                           ,thread_entry,psm_entry,thread_name,run_label,second_thread):
+    
+    
+    # resetting the gui values 
+    
+    gui_vars.reset_all()
     
     # checking if the user choose a folder
     # if he didn't, a message will appear
@@ -349,6 +661,7 @@ def checker(window,top_info_label,top_progress_bar
         # clearing the message
         folder_error_label.config(text=" ")
         
+
         psm=psm_entry.get()
         
         # checking the input for the dpi resolution 
@@ -357,77 +670,61 @@ def checker(window,top_info_label,top_progress_bar
         
         # if the user didn't input any, will set it to 100
         except:
-            gui_vars.set_dpi(100)
             
-        # checking which psm was choosen, if none will set
-        # to 11
-        if (psm==""):
-            psm="11"
+            if thread_name=="first":
+                
+                gui_vars.set_dpi(100)
             
-        gui_vars.set_psm(psm)    
-        try:
-            # checking if the user put a number in the entry
-            gui_vars.set_workers(int(thread_entry.get()))
+            # increasing the dpi for the second run if the user didn't choose a dpi
+            else:
+                
+                gui_vars.set_dpi(300)
             
-            # limiting the amount of threads to 15, even if the user
-            # input more (system limit)
-            if (gui_vars.get_workers()>15):
-                gui_vars.set_workers(15)
             
-            # if the user input 0, making sure the program will
-            # still run
-            if(gui_vars.get_workers()<1):
-                gui_vars.set_workers(1)
-        
-        # the user ignored the entry, setting the threads number to 15
-        # (as stated in the gui, 15 is the default)            
-        except:
-            gui_vars.set_workers(15)
-        
+        gui_vars.set_psm(str(psm))
+
+        gui_vars.set_workers(int(thread_entry.get()))
+            
         workspace_id=workspace_id_entry.get()
 
         if(workspace_id==""):
             workspace_error_label.config(text="ENTER CASE ID", fg ="red")
             print("please enter workspace ID")
             
-        elif int(psm)<0 or int(psm)>11:
-            psm_error_label.config(text="WRONG PSM", fg="red")
-            print("wrong psm")
-        else:     
-
-            
+        else:               
             workspace_error_label.config(text="V",fg="green")
-            psm_error_label.config(text=" ",fg="green")
-            
+
             gui_vars.set_workspace_id(str(workspace_id))
-            
-            warnings.catch_warnings()
-            warnings.simplefilter("ignore")
-   
 
-            gui_vars.set_error_path("errors//")
+            gui_vars.set_info_path("info//")
             create_folder(gui_vars.get_dir_load())
-
-            if (rotate_check_box.get()==1):
-                gui_vars.set_rotated_path("rotated//")
-                gui_vars.set_error_path("rotated//errors//")
-
-                create_folder(gui_vars.get_rotated_path())
-                         
-            create_folder(gui_vars.get_error_path())
+                
+                    
+            create_folder(gui_vars.get_info_path())
             folder_error_label.config(text="V", fg="green")
                 
-            # creating a request for the server
-            request_body={}
 
-            top_info_label.config(text="waiting for response") 
-            response = requests.post(url =)
+            if thread_name=="first":
             
+            
+                request_body={
+                        # request text to relativity
+                        }
+            else:
+                request_body={
+                    # request text to relativity
+                    }
+                
+            top_info_label.config(text="waiting for response") 
+            response = requests.post(#request url)
+
             resp = response.json()
+
+            
 
             info_download(window,top_info_label,top_progress_bar
                                                                                        ,top_start_label,top_end_label,
-                                                                                        resp)
+                                                                                        resp,thread_name,run_label,second_thread)
 
 
         
@@ -456,77 +753,88 @@ def gui_configurtion():
     title.configure(font = Font_tuple)
     title.grid(row=0,column = 2)
     
-    label_one = tk.Label(text="choose a folder to load from",font=font_text)
-    label_one.grid(row=1, column = 2)
+    run_label = tk.Label(text="first iteration",font=font_text)
+    run_label.grid(row=1, column = 2)
     
 
-    label_two = tk.Label(text="then press start",font=font_text)
-    label_two.grid(row=2, column = 2)
-    
-    tk.Label(window,text="CaseID", font=font_text).place(x=50,y=90)
+    tk.Label(window,text="CaseID", font=font_text).place(x=45,y=65)
     
     workspace_error_label=tk.Label(window,text=" ",font=font_text)
     workspace_error_label.place(x=280,y=90)
     
 
     workspace_id_entry = tk.Entry(window)
-    workspace_id_entry.grid(row=3, column=2)
+    workspace_id_entry.grid(row=2, column=2)
     
     top_info_label = tk.Label(text= "",font=font_text, width=42)
-    top_info_label.grid(row=4,column = 2)
+    top_info_label.grid(row=3,column = 2)
     
     top_start_label = tk.Label(text="", font=font_text)
-    top_start_label.place(x=75,y = 133)
+    top_start_label.place(x=75,y = 110)
     
     top_progress_bar = Progressbar(window, orient= 'HORIZONTAL'.lower(),length= 100, mode= 'determinate')
-    top_progress_bar.grid(row=5, column=2)
+    top_progress_bar.grid(row=4, column=2)
     
     top_end_label=tk.Label(text=" ", font=font_text)
-    top_end_label.place(x=255,y = 133)
+    top_end_label.place(x=255,y = 110)
     
     
-    rotate_button=Checkbutton(text="rotate files", variable=rotate_check_box,font=font_text)
-    rotate_button.grid(row=8,column=2)    
     
     thread_button=Checkbutton(text="no threads", variable=no_thread_check_box,font=font_text)
-    thread_button.grid(row=9,column=2)
+    thread_button.grid(row=5,column=2)
     
+    
+    fast_button=Checkbutton(text="fast", variable=no_rot,font=font_text)
+    fast_button.grid(row=6,column=2)
+
 
     psm_label=tk.Label(text="psm mode",font=font_text)
-    psm_label.place(x=75,y = 215)
-    psm_error_label=tk.Label(text="",font=font_text)
-    psm_error_label.place(x=250,y=215)
-    
+    psm_label.place(x=75,y = 195)
 
-    psm_entry = tk.Entry(window, width=4)
-    psm_entry.grid(row= 11, column =2)
+    
+    psm_options=[6,11]
+    psm= tk.IntVar(window)
+    psm.set(psm_options[0]) # default value
+    psm_menu = tk.OptionMenu(window, psm, *psm_options)
+    psm_menu.grid(row=7, column=2)
+
+    
     
     dpi_label = tk.Label(text="dpi", font=font_text)
-    dpi_label.place(x=120,y=240)
+    dpi_label.place(x=120,y=230)
     
     dpi_entry=tk.Entry(window, width=4)
-    dpi_entry.grid(row=12, column=2, pady = 10)
-
-    thread_label= tk.Label(text="threads(1-15)", font=font_text)
-    thread_label.place(x=60,y=270)
-
-
-    thread_entry=tk.Entry(window, width=5)
-    thread_entry.grid(row=13,column=2)
+    dpi_entry.grid(row=8, column=2, pady = 10)
+    
+    workers_options=[]
+    
+    for i in range (1,16):
+        workers_options.append(i)
+    
+   
+    workers = tk.IntVar(window)
+    workers.set(workers_options[14]) # default value
+    workers_menu = tk.OptionMenu(window, workers, *workers_options)
+    
+    workers_menu.grid(row=9, column=2)
+    thread_label= tk.Label(text="threads", font=font_text)
+    thread_label.place(x=90,y=265)
+    
 
     folder_error_label = tk.Label(text="", font=font_text)
     folder_error_label.place(x=255,y = 300)
     
     loading_button = tk.Button(text="loading folder",font=font_text, command = lambda:get_folder_path(window,folder_error_label))
-    loading_button.grid(row=14,column = 2,pady = 5)
+    loading_button.grid(row=10,column = 2,pady = 5)
     
     start_button = tk.Button(text="start",font=font_text, command =lambda: start(window,top_info_label,top_progress_bar
                                                                                ,top_start_label,top_end_label,
                                                                                workspace_error_label,
-                                                                               psm_error_label,folder_error_label,dpi_entry,workspace_id_entry
-                                                                               ,thread_entry,psm_entry))
-    start_button.grid(row=15,column = 2)
+                                                                               folder_error_label,dpi_entry,workspace_id_entry
+                                                                               ,workers,psm,run_label))
+    start_button.grid(row=11,column = 2)
 
+    
     window.focus()
     window.mainloop()
     
