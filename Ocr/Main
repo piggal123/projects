@@ -469,9 +469,9 @@ def info_download(window,top_info_label,top_progress_bar
         
     # printing how much time the whole proccess took    
     et=time.time()
-    formated_time="{:.2f}".format(et-gui_vars.get_st_time())    
+    formatted_time="{:.2f}".format(et-gui_vars.get_st_time())    
   
-    print("took",formated_time,"seconds")
+    print("took",formatted_time,"seconds")
     top_info_label.config(text="done")
     print('done') 
     if thread_name=="first" and no_rot.get()==0:       
