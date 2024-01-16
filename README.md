@@ -7,12 +7,6 @@ after saving them locally, iterating through them and converting them to images 
 extracts the text from them. the text is then uploaded to the data base and the files are
 deleted locally
 
-**project transcription:**
-
-the code pulls files from the data base, saving them locally and then sending them to another system
-for transcription. the code receives the text from the other system, updating the data base with it
-and delete the files locally
-
 
 **project grading files:**
 
@@ -31,6 +25,4 @@ the user to change the graph. the user can change the graph based on the caller,
 girvan_newman one which divides them into communities). the user can also choose another excel file to receieve a graph for it as well, replacing the old one.
 
 
-**project NER**:
 
-the code iterates through files, searching for NER. the end result is an excel file with the file name, type of the NER and the text of the NER itself. 
