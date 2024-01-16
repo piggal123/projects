@@ -277,12 +277,9 @@ def iterator(image):
     # the user wants the slow and safe method        
     else:
         
-
         for k in range(4):
-    
             image = rotate_images(image,k)
         
-    
             text = pytesseract.image_to_string(image,'heb+eng',config="--psm  "+gui_vars.get_psm()+"--oem 3") 
             
             # checking if the text isn't gibberish or empty
@@ -294,10 +291,7 @@ def iterator(image):
             
         counter +=1
     
-        
         if not found_text:
-            
-    
             for k in range(4):
     
                 image = rotate_images(image,k)
@@ -481,7 +475,7 @@ def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_la
             
             if update_relativity(artifact_id,text, True):
                 
-               # print("file {} was succesfully uploaded to Relativity".format(artifact_id))
+               print("file {} was succesfully uploaded to Relativity".format(artifact_id))
                pass 
         else:
             
@@ -489,9 +483,10 @@ def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_la
             
             if update_relativity(artifact_id,text, False):
                 
-               # print("{} failed to find text".format(artifact_id))
+                print("{} failed to find text".format(artifact_id))
                 pass
-    #the extraction failed        
+
+    # the extraction failed        
     except Exception as e:
        
         text = "tesseract failed " +str(e)
@@ -499,10 +494,7 @@ def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_la
         
         if update_relativity(artifact_id,text, False):
             pass 
-            #print("file {}".format(artifact_id), text) 
-            
-            
-    gui_vars.saving_excel(artifact_id,text, counter)        
+            #print("file {}".format(artifact_id), text) \ 
             
     # deleting the file once we are done with it
     os.remove(file_path)
