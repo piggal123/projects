@@ -28,7 +28,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 Image.MAX_IMAGE_PIXELS=999999999
 
 # creating a instance from the class to access the methods
-gui_vars=guiClass.gui_vars()
+gui_vars=guiClass.GuiVars()
 # creating the window
 window = tk.Tk()
 window.title("רשות התחרות")
