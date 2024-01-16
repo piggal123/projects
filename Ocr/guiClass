@@ -111,7 +111,7 @@ class gui_vars:
         worksheet.set_column(0,2,30)
         
         # saving the excel
-        writer.save()         
+        writer.close()         
     
     def st_init(self):
         self.st=time.time()
