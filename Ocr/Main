@@ -1,10 +1,4 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Thu Dec  1 10:32:05 2022
 
-@author: gals
-"""
-#import cv2
 import os
 import pytesseract
 import guiClass
@@ -13,18 +7,13 @@ from tkinter.ttk import Progressbar
 import tkinter as tk
 from io import  BytesIO
 from PIL import Image, ImageFile
-# UnidentifiedImageError
-# import numpy as np
 
 from tkinter import Checkbutton, IntVar
 from pdf2image import convert_from_path,pdfinfo_from_path
 
-
 from multiprocessing.pool import ThreadPool
 
-
 import time,re
-
 
 import requests
 import base64
@@ -53,16 +42,28 @@ no_rot=IntVar()
 
 pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 
-
-# UPDATE BACK TO RELATIVITY ########################################################
-# artifact_id: the identification id of the file in the relativity system 
-# text: the text of the extracted record
-# condition: whenever the proccess failed (false) or succeed (true) 
-# the function trying to upload the text to the extracted text field of the object
-# in relativity. if it fails, the excel will be updated otherwise will return
-# true
 def update_relativity(artifact_id,text, condition):
- 
+
+     """
+    Sending an update request to relativity with the
+    relevant information
+
+    Parameters
+    ----------
+    artifact_id : string
+        The unique key for the file in Relativity.
+    text : string
+        The extracted text.
+    condition : bool
+        True if the process was successful, false otherwise.
+
+    Returns
+    -------
+    bool
+        True if the response from Relativity was ok, false oherwise.
+
+    """
+
     update_body = {
                     # update request to relativity
                     }
@@ -105,13 +106,23 @@ class myThread (threading.Thread):
         self.workspace_error_label,self.folder_error_label,self.dpi_entry,self.workspace_id_entry,
               self.thread_entry,self.psm_entry,self.name,self.run_label,self.second_thread)
 
-
-# the function checks if the text is gibberish or contains
-# real words
-# text- the text that being checked
-# returns whenever it's gibberish or real text
-
 def is_language(text):
+     """
+    Tests whenever the text is composed of real letters or 
+    gibberish
+        
+
+    Parameters
+    ----------
+    text : string
+        The text that was extracted from the image.
+
+    Returns
+    -------
+    bool
+        True if the text is composed of real letters, false otherwise.
+
+    """
 
     # cleaning the text from non english chars
     cleaned_en_text = re.sub(r'[^a-zA-Z]', ' ', text).lower()
@@ -181,11 +192,26 @@ def is_language(text):
     else:
         return False
 
-
-# the fuction gets an image and a page number,
-# then checks the angle and rotate it to the normal
-# one. the function returns the rotated image
 def rotate_images(img,number):
+
+    """
+    Rotating the image
+
+    Parameters
+    ----------
+    img : string
+        The path to the image that is being rotated.
+    number : int
+        A counter for how many times the image was rotated,
+              to keep track of which degree should the image
+              be rotated to.
+
+    Returns
+    -------
+    Image
+        The rotated image.
+
+    """
 
     try:
         if number == 0:
@@ -207,16 +233,31 @@ def rotate_images(img,number):
         print("oserror:",e)
         return img
 
-
-# the function rotate the image until the pytesseract returns a
-# result which isn't gibberish. if after 8 rotation the text is
-# gibberish, will return false
-# image - the image that is being rotated and the text from it is
-# extracted
-# returns the text that was found, if it managed to find text
-# and how many times the picture was rotated
-
 def iterator(image):
+    """
+    Extracting the text from the image by rotating it and calling
+    the is_language function to determinate if the process was successful.
+    Rotating the image by calling rotate function, then extracting the text
+    until the function is_language returns true or the image is back
+    to it's original state.
+    
+
+    Parameters
+    ----------
+    image : string
+        Path to the image.
+
+    Returns
+    -------
+    text : string
+        The extracted text.
+    found_text : bool
+        True if the process was successful, false otherwise.
+    counter : int
+        The amount of times the image was rotated, for farther investigation .
+
+    """
+
     counter = 0
     found_text= False
     text= " "
@@ -282,12 +323,30 @@ def iterator(image):
         
     return  text, found_text, counter
 
-# the function gets a file path of pdf file and it's name,
-# rotating the pdf pages and extracting the text
-# file_path= the path of the pdf file
-# image_name = the name of the pdf file
-# the function returns the text from the pdf
 def rotate(file_path, image_name):
+    """
+    Extracts the relevant information from the pdf, converting it to images in bulks of 
+    ten pages everytime, then sending the images to iterator function
+        
+    Parameters:
+    ----------
+    file_path : string
+        Path to the pdf file
+        
+    image_name : string
+        Name of the file
+
+    Returns
+    -------
+    final_text : string
+        The text that was extracted.
+    found_text : bool
+        true if text was extracted, false otherwise.
+    counter : int
+        how many times the pdf was rotated.
+
+    """
+
     counter = 0
     pdf2image=[]
     try:
@@ -316,7 +375,28 @@ def rotate(file_path, image_name):
   
     
 def rotate_image(file_path,thread_name):
-    
+    """
+    Checks whenever it's the first or second thread calling it,
+    then call the iterator function to extract the text
+
+    Parameters
+    ----------
+    file_path : string
+        Path to the file.
+    thread_name : int
+        Which thread is calling the function, the first or the second.
+
+    Returns
+    -------
+    text : string
+        The extracted text.
+    found_text : bool
+        True if text was found, false otherwhise.
+    counter : int
+        How many times the image was rotated.
+
+    """
+
     counter = 0
     
     found_text= False
@@ -356,10 +436,22 @@ def rotate_image(file_path,thread_name):
     return text, found_text, counter
 
 
-# the method receives all of the tkinter variables, including a list of files to iterate
-# through. the method will iterate the files, converting them to a readable pdf, saving them
-# in the result folder. 
 def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_label,file_path,suffix,thread_name):
+    """
+    Gets the artifact id from the file path, checks which kind of file
+    is the file and then sends it to the fitting function
+    
+    Parameters:
+    ----------
+    file_path : string
+    the path of the file 
+        
+    Returns
+    -------
+    nothing
+    """
+
+
     counter = 0
     top_start_label.config(text=str(gui_vars.get_ocred_files_count()))
     top_progress_bar['value']=gui_vars.get_ocred_files_count()
@@ -421,10 +513,26 @@ def extractor(window, top_info_label,top_progress_bar,top_start_label,top_end_la
 
 
 
-# downloading the files from relativity, updating the tk inter variables 
 def info_download(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
                                                                            resp,thread_name,run_label,second_thread):
+
+
+    """ 
+    Checks if the user wants threads or single thread, then split
+    the objects into lists and starts the threads
+    
+    Paramaters
+    -------
+    
+    resp : string
+    The response we get from the server
+    
+    Returns
+    -------
+    Nothing
+        
+    """
 
     if thread_name=="second":
         run_label.config(text="second iteration")
@@ -478,10 +586,27 @@ def info_download(window,top_info_label,top_progress_bar
         second_thread.start()
 
 
-# downloading the files from relativity, updating the tk inter variables 
 def files_download(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
                                                                             all_objects,thread_name):
+
+
+    """
+    Download the files and saving them locally after checking if they are in the
+    supported formats while updating the tkinter variables during the process 
+
+    Parameters
+    ----------
+    all_objects : list
+        A list of all the objects the response from Relativity generated.
+
+
+    Returns
+    -------
+    None.
+
+    """
+
 
     # iterating through the list with artifact id to download the files
     supported_format_list=["PNG","JEPG","BMP","JPG","JPEG","GIF","ICO","EPS"]
@@ -607,8 +732,19 @@ def files_download(window,top_info_label,top_progress_bar
 
 
 
-# recreating the folders to clear the data inside
+
 def create_folder(folder):
+    """
+    
+    Parameters
+    ----------
+    folder : string
+        Name of the folder to be created.
+
+    Returns
+    -------
+    None.
+
     # creating the folder if it doesn't exists
     if not os.path.exists(folder):
         os.makedirs(folder)
@@ -621,9 +757,17 @@ def start(window,top_info_label,top_progress_bar
                                                                             workspace_error_label
                                                                            ,folder_error_label,dpi_entry,workspace_id_entry
                                                                            ,thread_entry,psm_entry,run_label):
-    
 
-    
+    """
+    Generating the threads
+
+
+    Returns
+    -------
+    None.
+
+    """
+   
     second_run_thread=myThread("second",window,top_info_label,top_progress_bar
                                                                                ,top_start_label,top_end_label,
                                                                                 workspace_error_label
@@ -638,13 +782,25 @@ def start(window,top_info_label,top_progress_bar
                                                                                ,thread_entry,psm_entry,run_label,second_run_thread)
     
     first_run_thread.start()
-# the function receives the tkinter variables, updating them through the process
-# the function will call the info_download thread to start downloading the files
+
+
+
 def checker(window,top_info_label,top_progress_bar
                                                                            ,top_start_label,top_end_label,
                                                                             workspace_error_label
                                                                            ,folder_error_label,dpi_entry,workspace_id_entry
                                                                            ,thread_entry,psm_entry,thread_name,run_label,second_thread):
+
+    
+    """
+    Checking if all the required options were filled. if they were,
+    generating a request to Relativity. otherwise, inform the user
+    where the problem is.
+    
+    Returns
+    -------
+    Nothing
+    """
     
     
     # resetting the gui values 
@@ -728,8 +884,18 @@ def checker(window,top_info_label,top_progress_bar
 
 
         
-#getting the folder path from the user
+
 def get_folder_path(window,folder_error_label):
+
+    """
+    Creating the tkinter dialog for folder selection, saving it
+    in gui_vars variable.
+    
+    Returns
+    --------
+    Nothing
+    
+    """
     
     gui_vars.set_dir_load(tk.filedialog.askdirectory())
     # updating the gui to show if the user chose a folder
@@ -742,8 +908,17 @@ def get_folder_path(window,folder_error_label):
     
         folder_error_label.config(text="V",fg="green")
         
-#defining the gui 
+
 def gui_configurtion():
+    """
+    Defining the gui, setting up all the variables for it
+    
+    Returns
+    -------
+    Nothing
+    
+    """
+
     # setting the font for the tittle
     Font_tuple = ("Comic Sans MS", 20, "bold")
     font_text= (14)
