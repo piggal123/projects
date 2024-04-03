@@ -1,0 +1,242 @@
+from tkinter import Button, Tk
+import classes
+import func_model
+from typing import Any
+import warnings
+from threading import Lock, Thread
+from multiprocessing.pool import ThreadPool
+import server_model
+from relativity_settings import head
+import translate_model_settings
+import time
+from os import environ
+
+all_objects = []
+func_model.create_folder("logs//")
+logger = func_model.configure_logger('my_logger',  "logs//" + func_model.get_current_time() + ".log")
+lock = Lock()
+environ['CURL_CA_BUNDLE'] = ''
+st = time.time()
+gui_vars = classes.GuiVars(st)
+errors_class = classes.ErrorsWriter(func_model.get_current_time(), "errors//")
+stop_flag = False
+
+
+def add_to_list(workspace_id: str) -> None:
+    """
+    calling the pull request until there are none more objects
+    to pull
+    :param workspace_id:
+    :return: None
+    """
+    i = 0
+    while not stop_flag:
+        data = server_model.pull_request(workspace_id, i, head)
+        all_objects.append(data)
+
+        i += 1
+        if not data:
+
+            break
+
+
+class MyThread(Thread):
+    def __init__(self, name, new_tk_vars):
+        Thread.__init__(self)
+        self.name = name
+        self.new_tk_vars = new_tk_vars
+
+    def run(self):
+        if self.name == "checker":
+            checker(self.new_tk_vars)
+
+
+def start(tk_vars: Any) -> None:
+    """
+    Starting the code in a different thread so the gui won't freeze
+    :return:
+    None
+    """
+
+    checker_thread = MyThread("checker", tk_vars)
+
+    checker_thread.start()
+
+
+# downloading the files from relativity, updating the tk inter variables
+def info_download(tk_vars: Any, objects: [str], i: int) -> None:
+    """
+    Updating the gui variables and calling the ner_extractor function
+
+    :param objects: list of objects from relativity
+    :param i: int, the number of the run
+    :return:
+    None
+    """
+    tk_vars.info_label.config(text="in progress")
+
+    func_model.setting_tk_values(tk_vars, i, len(objects))
+    print("before creation")
+    translator = translate_model_settings.Translator(tk_vars.language.get())
+    print("after creation")
+    tk_vars.info_label.config(text="getting text")
+
+    # checking if the threads check box was checked
+    if tk_vars.no_thread_check_box.get() == 1:
+
+        translate(tk_vars, objects, translator)
+
+    else:
+        pool = ThreadPool(processes=gui_vars.workers)
+        threads = []
+        chunk_iterator = classes.ChunkIterator(objects, gui_vars.workers)
+
+        for temp_list in chunk_iterator:
+            threads.append(pool.apply_async(translate, (tk_vars, temp_list, translator)))
+
+        for thread in threads:
+            thread.get()
+
+        pool.close()
+        pool.join()
+
+
+def translate(tk_vars: Any, temp_list, translator):
+    tk_vars.info_label.config(text="translation in progress")
+    print("before creating stringlistiterator")
+    iterator = classes.StringListIterator(temp_list)
+    print("after creating stringlistiterator")
+    for string in iterator:
+
+        if 'ArtifactID' in string:
+            artifact_id = str(string['ArtifactID'])
+            try:
+                text_to_translate = server_model.long_text_pull_request(artifact_id, head)
+
+                text_without_hebrew = func_model.remove_hebrew(text_to_translate)
+                text_without_numbers = func_model.remove_numbers(text_without_hebrew)
+                print("before translate called")
+                translated_text = translator.translate(text_without_numbers)
+
+
+                if server_model.push_request(translated_text, artifact_id, gui_vars.workspace_id, head):
+                    print("file ", artifact_id, " was translated")
+
+                else:
+                    print("file ", artifact_id, " failed to upload")
+
+            except Exception as e:
+
+                logger.error("An exception occurred " + artifact_id, exc_info=True)
+
+                print("error is", e)
+
+                text = "updated to relativity, failed to save "
+
+                errors_class.saving_excel(artifact_id, text)
+
+                if server_model.push_request(text, artifact_id, gui_vars.workspace_id, head):
+                    print(text + artifact_id)
+
+        with lock:
+            gui_vars.done_files = gui_vars.done_files + 1
+
+            tk_vars.start_label.config(text=str(gui_vars.done_files))
+
+            tk_vars.progress_bar['value'] = gui_vars.done_files
+
+
+def checker(tk_vars: Any) -> None:
+    """
+    checking if user input are legal
+    :param tk_vars:
+    :return:
+    None
+    """
+
+    workspace_id = tk_vars.workspace_id_entry.get()
+
+    if workspace_id == "":
+
+        tk_vars.workspace_error_label.config(text="ENTER CASE ID", fg="red")
+
+    elif tk_vars.language.get() == "Select Language":
+        tk_vars.language_error_label.config(text="CHOOSE LANG", fg="red")
+
+    else:
+        tk_vars.language_error_label.config(text="")
+        tk_vars.workspace_error_label.config(text="V", fg="green")
+
+        gui_vars.workspace_id = workspace_id
+
+        warnings.catch_warnings()
+        warnings.simplefilter("ignore")
+        try:
+            gui_vars.workers = int(tk_vars.workers.get())
+
+        except:
+            gui_vars.workers = 1
+
+        func_model.create_folder("errors//")
+
+        tk_vars.info_label.config(text="waiting for response")
+
+        background_thread = Thread(target=lambda: add_to_list(gui_vars.workspace_id))
+
+        # Start the thread
+        background_thread.start()
+
+        for i in range(50000):
+
+            if i == 0:
+                start_loop_time_tracker = time.time()
+                while True:
+                    try:
+                        partial_objects_list = all_objects[i]
+                        if len(partial_objects_list) > 0:
+                            info_download(tk_vars, partial_objects_list, i)
+                            break
+                        during_loop_time_tracker = time.time()
+                        if during_loop_time_tracker - start_loop_time_tracker > 15:
+                            print("did you mark the right conditions in relativity?")
+                            break
+                    except:
+                        pass
+                    time.sleep(1)
+            else:
+                try:
+                    partial_objects_list = all_objects[i]
+                    if len(partial_objects_list) > 0:
+                        info_download(tk_vars, partial_objects_list, i)
+                except:
+                    et = time.time()
+                    func_model.no_more_files(tk_vars, gui_vars.st, et)
+                    stop_flag = True
+                    background_thread.join()
+                    break
+
+
+def gui_configuration() -> None:
+    """
+    Defining the gui
+    :return:
+    None
+    """
+    font_tuple = ("Comic Sans MS", 20, "bold")
+    font_text = 14
+
+    tk_vars = classes.TkVars(window, font_text, font_tuple)
+
+    start_button = Button(text="start", font=font_text,
+                          command=lambda: start(tk_vars))
+    start_button.grid(row=15, column=2)
+
+    window.focus()
+    window.mainloop()
+
+
+if __name__ == "__main__":
+    window = Tk()
+    window.geometry('380x400')
+
+    gui_configuration()
