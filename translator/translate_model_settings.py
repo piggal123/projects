@@ -13,7 +13,7 @@ class Translator:
         local_model = AutoModelForSeq2SeqLM.from_pretrained(local_model_path)
         local_tokenizer = AutoTokenizer.from_pretrained(local_model_path)
 
-        self.pipe = pipeline("translation", model=local_model, tokenizer=local_tokenizer, device=0)
+        self.pipe = pipeline("translation", model=local_model, tokenizer=local_tokenizer)
 
     def translate(self, text: str) -> str:
         """
