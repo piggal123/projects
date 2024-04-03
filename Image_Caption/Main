@@ -76,12 +76,27 @@ def start(tk_vars: Any) -> None:
 
 
 def caption_generator(file_path: str) -> str:
+    """
+    calling the caption image function to give a caption to the image
+    and then calling the translate function to translate it from english to hebrew
+    
+    param file_path: str, the path to the file
+    :return:
+    str, the image caption
+    """
     caption_text = caption_model.caption_image(file_path)
     caption_text_hebrew = translate_model.translate(caption_text)
     return caption_text_hebrew
 
 
 def files_download(tk_vars: Any, partial_objects_list: [str]) -> None:
+    """
+    iterating through the objects, extracting the relevant data, saving them
+    as files and calling the caption generator method
+    :param partial_objects_list: [str], the objects that were retrieved from the call to the server
+    :return:
+    None
+    """
     tk_vars.info_label.config(text="conversion in progress")
     iterator = classes.StringListIterator(partial_objects_list)
 
@@ -129,8 +144,8 @@ def files_download(tk_vars: Any, partial_objects_list: [str]) -> None:
 def info_download(tk_vars: Any, objects: [str], i: int) -> None:
     """
     Updating the gui variables and calling the ner_extractor function
-
-    :param objects: list of objects from relativity
+    :param tk_vars: TkVars, a class instance that holds the tkinter info
+    :param objects: [str], list of objects from relativity
     :param i: int, the number of the run
     :return:
     None
@@ -163,11 +178,11 @@ def info_download(tk_vars: Any, objects: [str], i: int) -> None:
 
 def checker(tk_vars: Any) -> None:
     """
-        checking if user input are legal
-        :param tk_vars:
-        :return:
-        None
-        """
+    checking if user input are legal
+    :param tk_vars:
+    :return:
+    None
+    """
 
     workspace_id = tk_vars.workspace_id_entry.get()
 
@@ -234,6 +249,11 @@ def checker(tk_vars: Any) -> None:
 
 
 def gui_configuration() -> None:
+    """ 
+    creating a TkVars instance to generate the tkinter view
+    :return:
+    None
+    """
     # setting the font for the tittle
     font_tuple = ("Comic Sans MS", 20, "bold")
     font_text = 14
