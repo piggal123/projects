@@ -226,7 +226,7 @@ def checker(tk_vars: Any) -> None:
 
 def gui_configuration() -> None:
     """
-    Defining the gui
+    creating a TkVars instance to generate the tkinter view
     :return:
     None
     """
