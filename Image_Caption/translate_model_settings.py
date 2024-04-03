@@ -15,6 +15,14 @@ class Translator:
         self.pipe = pipeline("translation", model=local_model, tokenizer=local_tokenizer)
 
     def translate(self, text: str) -> str:
+        """
+        splitting the text into iterator by calling the function split_text and creating an
+        StringListIterator class instance by using the returned list. translating the
+        text by using the model
+        :param text: str, the file's text
+        :return:
+        str, the translated text
+        """
         text_iterator = StringListIterator(split_text(text))
 
         final_text = ""
