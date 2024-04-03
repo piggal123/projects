@@ -6,6 +6,12 @@ from os import path, makedirs
 
 
 def clean_text(text: str) -> str:
+    """
+    replacing the symbols which mess with the translator translating process
+    :param text: str, the file's text
+    :return:
+    str, a text without ? or !
+    """
     cleaned_text = text.replace("?", ".")
     cleaned_text = cleaned_text.replace("!", ".")
 
@@ -13,12 +19,25 @@ def clean_text(text: str) -> str:
 
 
 def split_text(text: str) -> [str]:
-
+    """
+    calling the clean_text function and then creating a list which
+    each index contains no more than 400 chars
+    :param text: str, the file's text
+    :return:
+    [str], a list
+    """
     cleaned_text = clean_text(text)
     return [cleaned_text[i:i + 400] for i in range(0, len(cleaned_text), 400)]
 
 
 def remove_numbers(text: str) -> str:
+    """
+    removing numbers from the text, so it won't mess with the
+    translating process
+    :param text: str, the file's text
+    :return:
+    str, the text without numbers
+    """
     # Define a translation table to remove digits
     translation_table = str.maketrans('', '', '0123456789')
 
@@ -26,6 +45,13 @@ def remove_numbers(text: str) -> str:
 
 
 def remove_hebrew(text: str) -> str:
+    """
+    removing hebrew from the text, so it won't mess with the
+    :param text: str, the file's text
+
+    :return:
+    str, the text without hebrew
+    """
     # Define a regular expression pattern to match Hebrew characters
     hebrew_pattern = re.compile(r'[\u0590-\u05FF]+', re.UNICODE)
     # Replace Hebrew characters with an empty string
