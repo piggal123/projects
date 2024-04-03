@@ -1,0 +1,5 @@
+from base64 import urlsafe_b64encode
+
+usrPass = password to relativity
+b64Val = urlsafe_b64encode(usrPass.encode('UTF-8')).decode('ascii')
+head = {'Content-Type': 'application/json', 'X-CSRF-Header': '-', 'Authorization': 'Basic %s' % b64Val}
