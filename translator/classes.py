@@ -2,20 +2,12 @@ from tkinter.ttk import Progressbar
 from tkinter import IntVar, Checkbutton, Label, Entry, HORIZONTAL, StringVar, OptionMenu
 import pandas as pd
 from typing import Any
-from numba.experimental import jitclass
 
 
 class TkVars:
 
     def __init__(self, window, font_text, font_tuple):
-        """
-        :param window:
-        :param font_text:
-        :param font_tuple:
 
-        returns:
-
-        """
         self.window = window
         self.no_thread_check_box = IntVar()
 
@@ -114,24 +106,6 @@ class ErrorsWriter:
 
         # saving the Excel
         writer.close()
-
-
-@jitclass
-class StringListIteratorJit:
-    def __init__(self, string_list):
-        self.string_list = string_list
-        self.index = 0
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.index < len(self.string_list):
-            result = self.string_list[self.index]
-            self.index += 1
-            return result
-        else:
-            raise StopIteration
 
 
 class StringListIterator:
