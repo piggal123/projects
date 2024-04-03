@@ -1,7 +1,6 @@
 from datetime import datetime
 from typing import Any
 import logging
-import re
 from os import path, makedirs
 
 
@@ -19,14 +18,6 @@ def split_text(text: str) -> [str]:
     # Remove any empty strings from the final result
     final_result = [sentence.strip() for sentence in final_result if sentence.strip()]
     return final_result
-
-
-def remove_hebrew(text) -> str:
-    # Define a regular expression pattern to match Hebrew characters
-    hebrew_pattern = re.compile(r'[\u0590-\u05FF]+', re.UNICODE)
-    # Replace Hebrew characters with an empty string
-    cleaned_text = re.sub(hebrew_pattern, '', text)
-    return cleaned_text
 
 
 def create_folder(folder: str) -> None:
