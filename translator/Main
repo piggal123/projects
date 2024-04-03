@@ -102,10 +102,19 @@ def info_download(tk_vars: Any, objects: [str], i: int) -> None:
 
 
 def translate(tk_vars: Any, temp_list, translator):
+    """
+    retrieving the file's text from relativity, removing hebrew and numbers from
+    it, then calling the translate function. creating a push request to relativity
+    to update the field
+    :param temp_list: str, objects list from relativity
+    :param translator: translator class instance, holding the translator settings
+    :return:
+    None
+    """
     tk_vars.info_label.config(text="translation in progress")
-    print("before creating stringlistiterator")
+
     iterator = classes.StringListIterator(temp_list)
-    print("after creating stringlistiterator")
+
     for string in iterator:
 
         if 'ArtifactID' in string:
@@ -115,9 +124,8 @@ def translate(tk_vars: Any, temp_list, translator):
 
                 text_without_hebrew = func_model.remove_hebrew(text_to_translate)
                 text_without_numbers = func_model.remove_numbers(text_without_hebrew)
-                print("before translate called")
-                translated_text = translator.translate(text_without_numbers)
 
+                translated_text = translator.translate(text_without_numbers)
 
                 if server_model.push_request(translated_text, artifact_id, gui_vars.workspace_id, head):
                     print("file ", artifact_id, " was translated")
