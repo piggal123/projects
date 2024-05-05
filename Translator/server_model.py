@@ -23,13 +23,13 @@ def push_request(text: str, artifact_id: str, workspace_id: str, head: {str, str
                 {
                     "Field":
                         {
-                            "Name": "ICA_TRANSLATION"
+                            "Name": "field_name"
                         },
                     "Value": text
                 },
                 {
                     "Field": {
-                        "Name": "ICA_TRANSLATE"
+                        "Name": "field_name"
                     },
 
                     "Value": False
@@ -66,7 +66,7 @@ def pull_request(workspace_id: str, i: int, head: {str, str}) -> [str]:
                 "ArtifactTypeID": 10
             },
 
-            "condition": "'ICA_TRANSLATE' == True",
+            "condition": "'field_name' == True",
             "sorts": [
             ]
         },
@@ -97,7 +97,7 @@ def long_text_pull_request(artifact_id: str, head: {str, str}, workspace_id: str
             "ArtifactID": artifact_id
         },
         "longTextField": {
-            "Name": "Extracted Text",
+            "Name": "field_name",
         }
 
     }
