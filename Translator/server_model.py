@@ -15,38 +15,7 @@ def push_request(text: str, artifact_id: str, workspace_id: str, head: {str, str
         bool: true if the update was successful, false otherwise
     """
     update_body = {
-        "Request": {
-            "Object": {
-                "ArtifactID": artifact_id
-            },
-            "FieldValues": [
-                {
-                    "Field":
-                        {
-                            "Name": "field_name"
-                        },
-                    "Value": text
-                },
-                {
-                    "Field": {
-                        "Name": "field_name"
-                    },
-
-                    "Value": False
-                },
-
-            ]
-        }
-    }
-    response = post(url=
-                    'https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/' + workspace_id +
-                    '/object/update', json=update_body, headers=head, verify=False)
-    if response.ok:
-     
-        return True
-    else:
-        print("ERROR:", artifact_id)
-        return False
+          # api request
 
 
 def pull_request(workspace_id: str, i: int, head: {str, str}) -> [str]:
@@ -60,27 +29,7 @@ def pull_request(workspace_id: str, i: int, head: {str, str}) -> [str]:
     str, the response from relativity
     """
 
-    request_body = {
-        "Request": {
-            "ObjectType": {
-                "ArtifactTypeID": 10
-            },
-
-            "condition": "'field_name' == True",
-            "sorts": [
-            ]
-        },
-
-        "start": i * 30000,
-        "length": 30000
-    }
-
-    response = post(url='https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/' +
-                    workspace_id + '/object/query',
-                    json=request_body, headers=head, verify=False)
-
-    data = response.json()['Objects']
-
+     # api request
     return data
 
 
@@ -93,18 +42,8 @@ def long_text_pull_request(artifact_id: str, head: {str, str}, workspace_id: str
     :return:
     """
     request_body = {
-        "exportObject": {
-            "ArtifactID": artifact_id
-        },
-        "longTextField": {
-            "Name": "field_name",
-        }
 
-    }
-    response = post(url='https://relativity-web/Relativity.Rest/API/Relativity.ObjectManager/v1/workspace/' + 
-                    workspace_id + '/object/streamlongtext',
-                    json=request_body, headers=head, verify=False)
-        
+      # api request
     return response.text
 
 
