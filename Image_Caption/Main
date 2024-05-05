@@ -246,7 +246,7 @@ def checker(tk_vars: classes.TkVars) -> None:
                         info_download(tk_vars, partial_objects_list, i)
                 except:
                     et = time.time()
-                    func_model.no_more_files(tk_vars, gui_vars.st, et)
+                    func_model.no_more_files(tk_vars.info_label, gui_vars.st, et)
                     stop_flag = True
                     background_thread.join()
                     break
