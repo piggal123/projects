@@ -2,61 +2,51 @@ from datetime import datetime
 from typing import Any
 import logging
 import re
-from os import path, makedirs
+from os import path, makedirs, listdir
+from argostranslate import package
 
 
-def clean_text(text: str) -> str:
+def install_translate_models() -> None:
     """
-    replacing the symbols which mess with the translator translating process
-    :param text: str, the file's text
-    :return:
-    str, a text without ? or !
+    installing the translate models for future usage
+    Return:
+    None
     """
-    cleaned_text = text.replace("?", ".")
-    cleaned_text = cleaned_text.replace("!", ".")
+    files = listdir(r"C:/projects/ICA_Translator/models")
 
-    return cleaned_text
+    for f in files:
+        package.install_from_path(r"C:/projects/ICA_Translator/models/" +f)
 
 
-def split_text(text: str) -> [str]:
+
+def show_progress(done_files: int, start_label: Any, progress_bar: Any, config_start_label: bool) -> None:
     """
-    calling the clean_text function and then creating a list which
-    each index contains no more than 400 chars
-    :param text: str, the file's text
-    :return:
-    [str], a list
+    showing the progress to the user via the tkinter, by updating
+    the values
+    Args:
+        done_files (int): how many files were processed 
+        start_label (tk label): showing how many files were processed 
+        progress_bar (tk progress bar): the progress bar
     """
-    cleaned_text = clean_text(text)
-    return [cleaned_text[i:i + 400] for i in range(0, len(cleaned_text), 400)]
+    if config_start_label:
+        start_label.config(text=str(done_files))
+
+    progress_bar['value'] = done_files
 
 
-def remove_numbers(text: str) -> str:
+
+def split_text(text, chunk_size) -> [str]:
     """
-    removing numbers from the text, so it won't mess with the
-    translating process
-    :param text: str, the file's text
-    :return:
-    str, the text without numbers
+    splitting the text by a chosen amount of chars
+    Args:
+        text (str): a string of words
+        chunk_size (int): when to split the text, after how many chars
+
+    Returns:
+        [str]: a list that each index contains no more than chunk_size amount of chars 
     """
-    # Define a translation table to remove digits
-    translation_table = str.maketrans('', '', '0123456789')
+    return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
-    return text.translate(translation_table)
-
-
-def remove_hebrew(text: str) -> str:
-    """
-    removing hebrew from the text, so it won't mess with the
-    :param text: str, the file's text
-
-    :return:
-    str, the text without hebrew
-    """
-    # Define a regular expression pattern to match Hebrew characters
-    hebrew_pattern = re.compile(r'[\u0590-\u05FF]+', re.UNICODE)
-    # Replace Hebrew characters with an empty string
-    cleaned_text = re.sub(hebrew_pattern, '', text)
-    return cleaned_text
 
 
 def create_folder(folder: str) -> None:
@@ -75,7 +65,7 @@ def get_current_time() -> str:
     """
     getting the current time
     :return:
-    str, the current time
+    str: the current time
     """
     current_time = datetime.now()
     formatted_time = current_time.strftime("%Y-%m-%d %H-%M")
@@ -85,10 +75,10 @@ def get_current_time() -> str:
 def configure_logger(logger_name: str, log_file: str) -> Any:
     """
     creating a logger file
-    :param logger_name: the name of the logger
-    :param log_file: the name of the logger file
+    :param logger_name str: the name of the logger
+    :param log_file str: the name of the logger file
     :return:
-    logger, a logger object
+    logger: a logger object
     """
     # Create a logger
     logger = logging.getLogger(logger_name)
@@ -111,7 +101,7 @@ def no_more_files(new_tk_vars: Any, st: Any, et: Any) -> None:
     """
     updating the gui to show the process is done and printing
     how much time the process took
-
+    
     :return:
     bool: True if there are no more files, false otherwise
     """
