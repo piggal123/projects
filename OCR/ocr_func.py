@@ -6,7 +6,7 @@ from io import BytesIO
 from typing import Any
 import warnings
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd = path
 warnings.catch_warnings()
 warnings.simplefilter("ignore")
 
@@ -193,7 +193,7 @@ def rotate(file_path: str, image_name: str, dpi: int, psm: str, no_rot: Any) -> 
     pdf_to_image = []
     try:
         # getting info from the pdf, checking how many pages it has
-        info = pdfinfo_from_path(file_path, poppler_path=r"C:\developement_projects\poppler\Library\bin")
+        info = pdfinfo_from_path(file_path, poppler_path=path)
 
     except:
 
@@ -202,7 +202,7 @@ def rotate(file_path: str, image_name: str, dpi: int, psm: str, no_rot: Any) -> 
 
     for page in range(1, max_pages + 1, 10):
         pdf_to_image += convert_from_path(file_path, dpi=dpi,
-                                          poppler_path=r"C:\developement_projects\poppler\Library\bin", first_page=page,
+                                          poppler_path=path, first_page=page,
                                           last_page=min(page + 10 - 1, max_pages))
 
 
