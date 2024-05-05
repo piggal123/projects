@@ -1,12 +1,12 @@
 from transformers import BlipProcessor, BlipForConditionalGeneration
 from PIL import Image
-
+from translate_function import translate
 
 class CaptionModel:
 
     def __init__(self, model_name: str):
-        self.processor = BlipProcessor.from_pretrained(model_name)
-        self.model = BlipForConditionalGeneration.from_pretrained(model_name)
+        self.processor = BlipProcessor.from_pretrained("C:/projects/ICA_Image_Caption/" +model_name)
+        self.model = BlipForConditionalGeneration.from_pretrained("C:/projects/ICA_Image_Caption/" + model_name)
 
     def caption_image(self, file_path: str) -> str:
         """
@@ -22,4 +22,4 @@ class CaptionModel:
 
         out = self.model.generate(**inputs)
 
-        return self.processor.decode(out[0], skip_special_tokens=True)
+        return translate(self.processor.decode(out[0], skip_special_tokens=True))
