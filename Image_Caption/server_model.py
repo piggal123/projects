@@ -3,6 +3,17 @@ from typing import Any
 
 
 def push_request(artifact_id: str, workspace_id: str, head: {str, str}, text: str) -> bool:
+    """
+    sending a push request to relativity to update the relevant fields
+    Args:
+        text (str): the translated text 
+        artifact_id (str): the unique key of the object in relativity
+        workspace_id (str): the unique key of the case in relativity
+        head (str, str): the required headers to access relativity
+
+    Returns:
+        bool: true if the update was successful, false otherwise
+    """
     update_body = {
         "Request": {
             "Object": {
@@ -11,13 +22,13 @@ def push_request(artifact_id: str, workspace_id: str, head: {str, str}, text: st
             "FieldValues": [
                 {
                     "Field": {
-                        "Name": "Caption_text"
+                        "Name": "field_name"
                     },
                     "Value": text
                 },
                 {
                     "Field": {
-                        "Name": "ICA_CAPTION"
+                        "Name": "field_name"
                     },
 
                     "Value": False
@@ -61,14 +72,15 @@ def download_file_request(workspace_id: str, artifact_id: str,  head: {str, str}
     return response
 
 
-def pull_request(workspace_id: str, i: int, head: {str, str}) -> Any:
+def pull_request(workspace_id: str, i: int, head: {str, str}) -> str:
 
     """
     creating pull request to relativity to get the objects from the server
-    :param workspace_id:
-    :param head:
+    :param workspace_id str: the unique key of the case in relativity
+    :param head {str,str}:  the required headers to access relativity
+    :param i int: which loop number it is
     :return:
-    the response from relativity
+    str: the response from relativity
     """
 
     request_body = {
@@ -80,7 +92,7 @@ def pull_request(workspace_id: str, i: int, head: {str, str}) -> Any:
                 {"Name": "File Extension"},
 
             ],
-            "condition": "'ICA_CAPTION' == True",
+            "condition": "'field_name' == True",
             "sorts": [
             ]
         },
