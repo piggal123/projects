@@ -39,7 +39,7 @@ def add_to_list(workspace_id: str) -> None:
     """
     calling the pull request until there are none more objects
     to pull
-    :param workspace_id:
+    :param workspace_id: the unique key of the case in relativity
     :return: None
     """
     i = 0
@@ -63,9 +63,11 @@ class MyThread(Thread):
             checker(self.new_tk_vars)
 
 
-def start(tk_vars: Any) -> None:
+def start(tk_vars: classes.TkVars) -> None:
     """
     Starting the code in a different thread so the gui won't freeze
+    args:
+        tk_vars TkVars: a class instance that holds the tkinter info
     :return:
     None
     """
@@ -80,23 +82,26 @@ def caption_generator(file_path: str) -> str:
     calling the caption image function to give a caption to the image
     and then calling the translate function to translate it from english to hebrew
     
-    param file_path: str, the path to the file
+    param file_path str: the path to the file
     :return:
-    str, the image caption
+    str: the image caption in hebrew
     """
+
     caption_text = caption_model.caption_image(file_path)
     caption_text_hebrew = translate_model.translate(caption_text)
     return caption_text_hebrew
 
 
-def files_download(tk_vars: Any, partial_objects_list: [str]) -> None:
+def files_download(tk_vars: classes.TkVars, partial_objects_list: [str]) -> None:
     """
     iterating through the objects, extracting the relevant data, saving them
     as files and calling the caption generator method
-    :param partial_objects_list: [str], the objects that were retrieved from the call to the server
+    :param tk_vars TkVars: a class instance that holds the tkinter info
+    :param partial_objects_list [str]: the objects that were retrieved from the call to the server
     :return:
     None
     """
+
     tk_vars.info_label.config(text="conversion in progress")
     iterator = classes.StringListIterator(partial_objects_list)
 
@@ -141,10 +146,10 @@ def files_download(tk_vars: Any, partial_objects_list: [str]) -> None:
             tk_vars.progress_bar['value'] = gui_vars.done_files
 
 
-def info_download(tk_vars: Any, objects: [str], i: int) -> None:
+def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
     """
     Updating the gui variables and calling the ner_extractor function
-    :param tk_vars: TkVars, a class instance that holds the tkinter info
+    :param tk_vars TkVars: a class instance that holds the tkinter info
     :param objects: [str], list of objects from relativity
     :param i: int, the number of the run
     :return:
@@ -176,10 +181,10 @@ def info_download(tk_vars: Any, objects: [str], i: int) -> None:
         pool.join()
 
 
-def checker(tk_vars: Any) -> None:
+def checker(tk_vars: classes.TkVars) -> None:
     """
     checking if user input are legal
-    :param tk_vars:
+    :param tk_vars TkVars: a class instance that holds the tkinter info
     :return:
     None
     """
