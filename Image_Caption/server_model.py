@@ -72,7 +72,7 @@ def download_file_request(workspace_id: str, artifact_id: str,  head: {str, str}
     return response
 
 
-def pull_request(workspace_id: str, i: int, head: {str, str}) -> str:
+def pull_request(workspace_id: str, i: int, head: {str, str}) -> [str]:
 
     """
     creating pull request to relativity to get the objects from the server
