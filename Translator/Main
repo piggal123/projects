@@ -12,8 +12,8 @@ import time
 from os import environ
 
 all_objects = []
-func_model.create_folder(r"C:/projects/ICA_Translator/logs//")
-logger = func_model.configure_logger('my_logger',  r"C:/projects/ICA_Translator/logs/" + func_model.get_current_time() + ".log")
+func_model.create_folder("logs//")
+logger = func_model.configure_logger('my_logger',  "logs//" + func_model.get_current_time() + ".log")
 lock = Lock()
 environ['CURL_CA_BUNDLE'] = ''
 st = time.time()
