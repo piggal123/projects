@@ -7,13 +7,13 @@ from threading import Lock, Thread
 from multiprocessing.pool import ThreadPool
 import server_model
 from relativity_settings import head
-import translate_model_settings
+from translate_function import translate
 import time
 from os import environ
 
 all_objects = []
-func_model.create_folder("logs//")
-logger = func_model.configure_logger('my_logger',  "logs//" + func_model.get_current_time() + ".log")
+func_model.create_folder(r"C:/projects/ICA_Translator/logs//")
+logger = func_model.configure_logger('my_logger',  r"C:/projects/ICA_Translator/logs/" + func_model.get_current_time() + ".log")
 lock = Lock()
 environ['CURL_CA_BUNDLE'] = ''
 st = time.time()
@@ -26,7 +26,7 @@ def add_to_list(workspace_id: str) -> None:
     """
     calling the pull request until there are none more objects
     to pull
-    :param workspace_id:
+    :param workspace_id str: the unique key of the case in relativity
     :return: None
     """
     i = 0
@@ -41,7 +41,7 @@ def add_to_list(workspace_id: str) -> None:
 
 
 class MyThread(Thread):
-    def __init__(self, name, new_tk_vars):
+    def __init__(self, name, new_tk_vars: classes.TkVars):
         Thread.__init__(self)
         self.name = name
         self.new_tk_vars = new_tk_vars
@@ -51,9 +51,11 @@ class MyThread(Thread):
             checker(self.new_tk_vars)
 
 
-def start(tk_vars: Any) -> None:
+def start(tk_vars: classes.TkVars) -> None:
     """
     Starting the code in a different thread so the gui won't freeze
+    args:
+        tk_vars TkVars: a class instance that holds the tkinter info
     :return:
     None
     """
@@ -64,35 +66,36 @@ def start(tk_vars: Any) -> None:
 
 
 # downloading the files from relativity, updating the tk inter variables
-def info_download(tk_vars: Any, objects: [str], i: int) -> None:
-    """
-    Updating the gui variables and calling the ner_extractor function
+def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
 
-    :param objects: list of objects from relativity
-    :param i: int, the number of the run
+    """
+    Updating the gui variables and calling the workflow_manager function
+    :param tk_vars TkVars: a class instance that holds the tkinter info
+    :param objects [str]: list of objects from relativity
+    :param objects [str]: of objects from relativity
+    :param i int: the number of the run
     :return:
     None
     """
+
     tk_vars.info_label.config(text="in progress")
 
     func_model.setting_tk_values(tk_vars, i, len(objects))
-    print("before creation")
-    translator = translate_model_settings.Translator(tk_vars.language.get())
-    print("after creation")
+
     tk_vars.info_label.config(text="getting text")
 
     # checking if the threads check box was checked
     if tk_vars.no_thread_check_box.get() == 1:
 
-        translate(tk_vars, objects, translator)
+        workflow_manager(tk_vars, objects, False)
 
     else:
         pool = ThreadPool(processes=gui_vars.workers)
         threads = []
         chunk_iterator = classes.ChunkIterator(objects, gui_vars.workers)
 
-        for temp_list in chunk_iterator:
-            threads.append(pool.apply_async(translate, (tk_vars, temp_list, translator)))
+        for partial_objects_list in chunk_iterator:
+            threads.append(pool.apply_async(workflow_manager, (tk_vars, partial_objects_list, True)))
 
         for thread in threads:
             thread.get()
@@ -101,31 +104,35 @@ def info_download(tk_vars: Any, objects: [str], i: int) -> None:
         pool.join()
 
 
-def translate(tk_vars: Any, temp_list, translator):
+
+def workflow_manager(tk_vars: classes.TkVars, partial_objects_list: [str], lock_required: bool) -> None:
     """
     retrieving the file's text from relativity, removing hebrew and numbers from
     it, then calling the translate function. creating a push request to relativity
     to update the field
-    :param temp_list: str, objects list from relativity
-    :param translator: translator class instance, holding the translator settings
+    :param tk_vars TkVars: a class instance that holds the tkinter info
+    :param temp_list [str]: objects list from relativity
+    :param lock_required bool: checker if threads are being used or just a single one
     :return:
     None
     """
+
     tk_vars.info_label.config(text="translation in progress")
 
-    iterator = classes.StringListIterator(temp_list)
+    iterator = classes.StringListIterator(partial_objects_list)
 
     for string in iterator:
-
+        
         if 'ArtifactID' in string:
+            
             artifact_id = str(string['ArtifactID'])
+            
             try:
-                text_to_translate = server_model.long_text_pull_request(artifact_id, head)
-
-                text_without_hebrew = func_model.remove_hebrew(text_to_translate)
-                text_without_numbers = func_model.remove_numbers(text_without_hebrew)
-
-                translated_text = translator.translate(text_without_numbers)
+                text_to_translate = server_model.long_text_pull_request(artifact_id, head, gui_vars.workspace_id)
+                
+                translate_language = tk_vars.chosen_languague[0] + tk_vars.chosen_languague[1]
+                
+                translated_text = translate(text_to_translate, tk_vars.translate_progress_bar, translate_language)
 
                 if server_model.push_request(translated_text, artifact_id, gui_vars.workspace_id, head):
                     print("file ", artifact_id, " was translated")
@@ -146,18 +153,22 @@ def translate(tk_vars: Any, temp_list, translator):
                 if server_model.push_request(text, artifact_id, gui_vars.workspace_id, head):
                     print(text + artifact_id)
 
-        with lock:
-            gui_vars.done_files = gui_vars.done_files + 1
+        gui_vars.done_files = gui_vars.done_files + 1
 
-            tk_vars.start_label.config(text=str(gui_vars.done_files))
+        
+        if lock_required:
+            # making sure the theards won't access the same variable at the same time
+            with lock:
+                func_model.show_progress(gui_vars.done_files, tk_vars.start_label, tk_vars.progress_bar, True)
 
-            tk_vars.progress_bar['value'] = gui_vars.done_files
+        else:
+            func_model.show_progress(gui_vars.done_files, tk_vars.start_label, tk_vars.progress_bar, True)
 
 
-def checker(tk_vars: Any) -> None:
+def checker(tk_vars: classes.TkVars) -> None:
     """
     checking if user input are legal
-    :param tk_vars:
+    :param tk_vars TkVars: a class instance that holds the tkinter info 
     :return:
     None
     """
@@ -173,6 +184,7 @@ def checker(tk_vars: Any) -> None:
 
     else:
         tk_vars.language_error_label.config(text="")
+        tk_vars.chosen_languague =  tk_vars.language.get()
         tk_vars.workspace_error_label.config(text="V", fg="green")
 
         gui_vars.workspace_id = workspace_id
@@ -183,7 +195,7 @@ def checker(tk_vars: Any) -> None:
             gui_vars.workers = int(tk_vars.workers.get())
 
         except:
-            gui_vars.workers = 1
+            gui_vars.workers = 15
 
         func_model.create_folder("errors//")
 
@@ -246,5 +258,6 @@ def gui_configuration() -> None:
 if __name__ == "__main__":
     window = Tk()
     window.geometry('380x400')
+    func_model.install_translate_models()
 
     gui_configuration()
