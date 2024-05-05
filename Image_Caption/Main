@@ -59,6 +59,7 @@ class MyThread(Thread):
 def start(tk_vars: classes.TkVars) -> None:
     """
     Starting the code in a different thread so the gui won't freeze
+    :param tk_vars classes.TkVars: a class instance that holds the tkinter info
     :return:
     None
     """
@@ -86,7 +87,7 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
     """
     iterating through the objects, extracting the relevant data, saving them
     as files and calling the caption generator method
-    :param tk_vars TkVars: a class instance that holds the tkinter info
+    :param tk_vars classes.TkVars: a class instance that holds the tkinter info
     :param partial_objects_list [str]: objects list from relativity
     :param lock_required bool: checker if threads are being used or just a single one
     :return:
@@ -149,9 +150,9 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
 def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
     """
     Updating the gui variables and calling the files_download function
-    :param tk_vars: TkVars, a class instance that holds the tkinter info
-    :param objects: [str], list of objects from relativity
-    :param i: int, the number of the run
+    :param tk_vars classes.TkVars: a class instance that holds the tkinter info
+    :param objects [str]: list of objects from relativity
+    :param i int: the number of the run
     :return:
     None
     """
