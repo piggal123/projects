@@ -12,7 +12,6 @@ import func_model
 from os import environ
 import server_model
 from caption_model import CaptionModel
-from translate_function import translate
 
 
 # allowing truncated images to be loaded.
@@ -39,14 +38,14 @@ def add_to_list(workspace_id: str) -> None:
     """
     calling the pull request until there are none more objects
     to pull
-    :param workspace_id:
+    :param workspace_id str: the unique key of the case in relativity
     :return: None
     """
     i = 0
     while not stop_flag:
         data = server_model.pull_request(workspace_id, i, head)
         all_objects.append(data)
-
+    
         i += 1
         if not data:
             break
@@ -77,22 +76,25 @@ def start(tk_vars: classes.TkVars) -> None:
 
 def caption_generator(file_path: str) -> str:
     """
-    calling the caption image function to give a caption to the image
-    and then calling the translate function to translate it from english to hebrew
+    calling the caption image function to generate a caption to the image
     param file_path: str, the path to the file
     :return:
-    str, the image caption
+    str: the image caption
     """
     caption_text = caption_model.caption_image(file_path)
-    caption_text_hebrew = translate(caption_text)
-    return caption_text_hebrew
+ 
+    return caption_text
+
 
 
 def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_required: bool) -> None:
+
     """
     iterating through the objects, extracting the relevant data, saving them
     as files and calling the caption generator method
-    :param partial_objects_list: [str], the objects that were retrieved from the call to the server
+    :param tk_vars TkVars: a class instance that holds the tkinter info
+    :param temp_list [str]: objects list from relativity
+    :param lock_required bool: checker if threads are being used or just a single one
     :return:
     None
     """
@@ -100,7 +102,8 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
     iterator = classes.StringListIterator(partial_objects_list)
 
     for string in iterator:
-
+        
+        gui_vars.done_files += 1
         if 'ArtifactID' in string:
             artifact_id = str(string['ArtifactID'])
             try:
@@ -109,13 +112,13 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
                 response = server_model.download_file_request(gui_vars.workspace_id, artifact_id, head)
                 if not response:
                     continue
-
+          
                 file_path = "files//" + artifact_id + "." + suffix
                 file = open(file_path, "wb")
                 file.write(response.content)
                 file.close()
                 caption_text = caption_generator(file_path)
-
+               
                 if server_model.push_request(artifact_id, gui_vars.workspace_id, head, caption_text):
                     print("file ", artifact_id, "got captions successfully")
 
@@ -123,24 +126,28 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
                     print("file ", artifact_id, " failed to update relativity")
 
             except Exception as e:
-
+                
+                
                 logger.error("An exception occurred " + artifact_id, exc_info=True)
 
                 print("error is", e)
+                     
+                text = "updated to relativity" + artifact_id + " failed to save"
 
-                text = "updated to relativity" + artifact_id + " failed to save "
+                if server_model.push_request(artifact_id, gui_vars.workspace_id, head, text):
+                    print(artifact_id, "error uploaded successfuly")
 
+                
                 errors_class.saving_excel(artifact_id, text)
 
-        gui_vars.done_files = gui_vars.done_files + 1
-
         if lock_required:
-            # making sure the theards won't access the same variable at the same time
+        # making sure the theards won't access the same variable at the same time
             with lock:
-                func_model.show_progress(gui_vars.done_files, tk_vars.start_label, tk_vars.progress_bar)
+                func_model.show_progress(done_files, start_label, progress_bar)
 
         else:
-            func_model.show_progress(gui_vars.done_files, tk_vars.start_label, tk_vars.progress_bar)
+
+            func_model.show_progress(done_files, start_label, progress_bar)
 
 
 def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
@@ -158,7 +165,7 @@ def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
 
     # checking if the threads check box was checked
     if tk_vars.no_thread_check_box.get() == 1:
-
+        
         files_download(tk_vars, objects, False)
 
     else:
