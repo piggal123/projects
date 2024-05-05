@@ -165,7 +165,7 @@ def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
 
     func_model.setting_tk_values(tk_vars, i, len(objects))
 
-    # checking if the threads check box was checked
+    # checking if the no threads check box was checked
     if tk_vars.no_thread_check_box.get() == 1:
         
         files_download(tk_vars, objects, False)
