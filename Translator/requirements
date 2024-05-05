@@ -31,3 +31,4 @@ transformers
 typing_extension
 tzdata 
 urllib3
+XlsxWriter
