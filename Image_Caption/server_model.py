@@ -90,7 +90,7 @@ def pull_request(workspace_id: str, i: int, head: {str, str}) -> [str]:
     :param head {str,str}:  the required headers to access relativity
     :param i int: which loop number it is
     :return:
-    str: the response from relativity
+    [str]: the response from relativity
     """
 
     request_body = {
