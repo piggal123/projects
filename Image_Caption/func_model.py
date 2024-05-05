@@ -4,6 +4,14 @@ import logging
 from os import path, makedirs
 
 
+def install_translate_models() -> Any:
+
+    """
+    installing the translate model for future usage
+    """
+    package.install_from_path(path)
+
+
 def show_progress(done_files: int, start_label: Any, progress_bar: Any) -> None:
     """_summary_
     showing the progress to the user via the tkinter, by updating
