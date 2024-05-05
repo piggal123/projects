@@ -1,4 +1,3 @@
-from PIL import Image, ImageFile
 from typing import Any
 
 from threading import Thread, Lock
@@ -13,11 +12,6 @@ from os import environ
 import server_model
 from caption_model import CaptionModel
 
-
-# allowing truncated images to be loaded.
-ImageFile.LOAD_TRUNCATED_IMAGES = True
-# setting the maximum image pixels to 999999999.
-Image.MAX_IMAGE_PIXELS = 999999999
 
 
 lock = Lock
