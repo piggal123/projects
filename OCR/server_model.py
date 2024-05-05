@@ -16,44 +16,7 @@ def push_request(text: str,  artifact_id: str, workspace_id: str, head: {str, st
     """
 
     update_body = {
-        "Request": {
-            "Object": {
-                "ArtifactID": artifact_id
-            },
-            "FieldValues": [
-                {
-                    "Field":
-                        {
-                            "Name": "Extracted Text"  # Extracted text
-                        },
-                    "Value": text
-                },
-                {
-                    "Field": {
-                        "Name": "ICA_GOOGLE_OCR"
-                    },
-
-                    "Value": False
-                },
-                {
-                    "Field": {
-                        "Name": "ICA_SUCCESS"
-                    },
-
-                    "Value": condition
-                }
-
-            ]
-        }
-    }
-    response = post(url=
-                     'https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/' + workspace_id + '/object/update',
-                     json=update_body, headers=head, verify=False)
-    if response.ok:
-        return True
-    else:
-        print("ERROR:", artifact_id)
-        return False
+        # api request
 
 
 def download_file_request(workspace_id: str, artifact_id: str,  head: {str, str}) -> Any:
@@ -67,26 +30,7 @@ def download_file_request(workspace_id: str, artifact_id: str,  head: {str, str}
     a json response from relativity which contains the file info, or false if the
     request failed
     """
-    response = get(url='https://relativity-web/Relativity.Rest/API/Relativity.Document/workspace/' +
-                       workspace_id + '/downloadnativefile/' + artifact_id, headers=head, verify=False)
-
-    if response.status_code != 200:
-
-        # checking what is the response error text
-        try:
-            # getting the text
-            text = response.text.split(":")
-            error_code_text = text[3].replace("}", "")
-            error_code_text = error_code_text.replace('"', '')
-            error_code_text = error_code_text + " error code: " + str(response.status_code)
-
-        # failed to get the error text
-        except:
-            error_code_text = "error code: " + str(response.status_code)
-
-        print("error code is", error_code_text)
-        return False
-
+      # api request
     return response
 
 
@@ -103,49 +47,10 @@ def pull_request(workspace_id: str, i: int, head: {str, str}, thread_name: str) 
  
     if thread_name == "first":
        
-        request_body = {
-            "Request": {
-                "ObjectType": {
-                    "ArtifactTypeID": 10
-                },
-                "fields": [
-                    {"Name": "File Extension"},
-                ],
-
-                "condition": "'ICA_GOOGLE_OCR' == True",
-                "sorts": [
-                ]
-            },
-
-            "start": i * 30000,
-            "length": 30000
-        }
+         # api request
 
     else:
-        request_body = {
-            "Request": {
-                "ObjectType": {
-                    "ArtifactTypeID": 10
-                },
-                "fields": [
-                    {"Name": "File Extension"},
-                    {"Name": "Extracted Text"},
-                ],
-
-                "condition": "'ICA_GOOGLE_OCR' == False",
-                "sorts": [
-                ]
-            },
-            "start": i * 30000,
-            "length": 30000
-        }
-
-    response = post(url='https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/' +
-                         workspace_id + '/object/query',
-                         json=request_body, headers=head, verify=False)
-
-
-    data = response.json()['Objects']
+         # api request
 
     return data
 
