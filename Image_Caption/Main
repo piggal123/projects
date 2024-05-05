@@ -19,7 +19,7 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 # setting the maximum image pixels to 999999999.
 Image.MAX_IMAGE_PIXELS = 999999999
 
-# creating an instance from the class to access the methods
+
 lock = Lock
 all_objects = []
 func_model.create_folder("logs//")
