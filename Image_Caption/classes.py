@@ -4,28 +4,6 @@ import pandas as pd
 from typing import Any
 
 
-class ResultsDf:
-    def __init__(self):
-        self.final_df = pd.DataFrame(
-            columns=["Control Number", "Custodian", "file name", "File Extension", "Native File", "Group Identifier",
-                     "Investigator Notes"])
-
-    def saving_csv(self, current_time: Any):
-        self.final_df.to_csv("excel//upload " + current_time + ".csv", index=False)
-
-    def adding_row(self, converted_file_path, custodian, control_number):
-        converted_file_name = converted_file_path.split("//")[-1]
-        converted_suffix = converted_file_path.split(".")[-1]
-        converted_control_number = control_number + "_0001"
-        text = "Created by ICA for imaging purpose"
-        converted_file_df = pd.DataFrame({"Control Number": [converted_control_number], "Custodian": [custodian],
-                                          "File Extension": [converted_suffix.upper()],
-                                          "file name": [converted_file_name], "Native File": [converted_file_path]
-                                             , "Group Identifier": [control_number], "Investigator Notes": [text]})
-
-        self.final_df = pd.concat([self.final_df, converted_file_df], ignore_index=True, axis=0)
-
-
 class TkVars:
     folder_path = ""
 
