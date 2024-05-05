@@ -103,7 +103,7 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
 
     for string in iterator:
         
-        gui_vars.done_files += 1
+        
         if 'ArtifactID' in string:
             artifact_id = str(string['ArtifactID'])
             try:
@@ -139,7 +139,7 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
 
                 
                 errors_class.saving_excel(artifact_id, text)
-
+        gui_vars.done_files += 1
         if lock_required:
         # making sure the theards won't access the same variable at the same time
             with lock:
