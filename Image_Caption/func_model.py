@@ -4,20 +4,20 @@ import logging
 from os import path, makedirs
 
 
-def clean_text(text: str) -> str:
-    cleaned_text = text.replace("?", ".")
-    cleaned_text = cleaned_text.replace("!", ".")
+def show_progress(done_files: int, start_label: Any, progress_bar: Any) -> None:
+    """_summary_
+    showing the progress to the user via the tkinter, by updating
+    the values
+    Args:
+        done_files (int): how many files were processed 
+        start_label (tk label): showing how many files were processed 
+        progress_bar (tk progress bar): the progress bar
+    """
 
-    return cleaned_text
+    start_label.config(text=str(done_files))
 
+    progress_bar['value'] = done_files
 
-def split_text(text: str) -> [str]:
-
-    final_result = clean_text(text).split(".")
-
-    # Remove any empty strings from the final result
-    final_result = [sentence.strip() for sentence in final_result if sentence.strip()]
-    return final_result
 
 
 def create_folder(folder: str) -> None:
@@ -36,7 +36,7 @@ def get_current_time() -> str:
     """
     getting the current time
     :return:
-    str, the current time
+    str: the current time
     """
     current_time = datetime.now()
     formatted_time = current_time.strftime("%Y-%m-%d %H-%M")
@@ -46,10 +46,10 @@ def get_current_time() -> str:
 def configure_logger(logger_name: str, log_file: str) -> Any:
     """
     creating a logger file
-    :param logger_name: the name of the logger
-    :param log_file: the name of the logger file
+    :param logger_name str: the name of the logger
+    :param log_file str: the name of the logger file
     :return:
-    logger, a logger object
+    logger: a logger object
     """
     # Create a logger
     logger = logging.getLogger(logger_name)
@@ -72,9 +72,13 @@ def no_more_files(new_tk_vars: Any, st: Any, et: Any) -> None:
     """
     updating the gui to show the process is done and printing
     how much time the process took
-
+    Args:
+        info_label (Tkinter label): a label which will be updated
+        st (time.time()): starting time
+        et (time.time()): end time
+          
     :return:
-    bool: True if there are no more files, false otherwise
+    None
     """
 
     new_tk_vars.info_label.config(text="done")
