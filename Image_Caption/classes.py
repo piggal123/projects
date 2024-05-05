@@ -7,19 +7,18 @@ from typing import Any
 class TkVars:
     folder_path = ""
 
-    def __init__(self, window, font_text, font_tuple):
+    def __init__(self, window: Any, font_text: int, font_tuple: {str, int, str}):
         """
-        :param window:
-        :param font_text:
-        :param font_tuple:
-
-        returns:
-
+        setting the tkvars class
+        Args:
+            window (tkinter window): the window of tkinter
+            font_size (int): the size of the funt
+            font_tuple (str, int, str): which font, size of it and setting it to bold of the header
         """
         self.window = window
         self.no_thread_check_box = IntVar()
 
-        title = Label(text="CONVERTOR")
+        title = Label(text="IMAGE_CAPTION")
         title.configure(font=font_tuple)
         title.grid(row=0, column=2)
 
@@ -87,8 +86,8 @@ class ErrorsWriter:
     def saving_excel(self, artifact_id: str, error: str) -> None:
         """
         updating the Excel with the file name and error, then saving it
-        :param artifact_id: str, the artifact id of the object
-        :param error: str, which error occurred
+        :param artifact_id str: the artifact id of the object
+        :param error str: which error occurred
         :return:
         None
         """
