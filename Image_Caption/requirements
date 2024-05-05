@@ -1,6 +1,8 @@
+argostranslate
 certifi 
 charset-normalizer 
 colorama
+ctranslate2
 filelock 
 fsspec
 huggingface-hub
@@ -16,9 +18,11 @@ regex
 requests 
 safetensors
 six 
+stanza
 tokenizers 
 tqdm
 transformers 
 typing_extensions
 tzdata
 urllib3 
+XlsxWriter
