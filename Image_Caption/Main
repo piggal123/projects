@@ -14,9 +14,9 @@ import server_model
 from caption_model import CaptionModel
 from translate_model_settings import Translator
 
-# These line allow truncated images to be loaded.
+# allowing truncated images to be loaded.
 ImageFile.LOAD_TRUNCATED_IMAGES = True
-# These line set the maximum image pixels to 999999999.
+# setting the maximum image pixels to 999999999.
 Image.MAX_IMAGE_PIXELS = 999999999
 
 # creating an instance from the class to access the methods
