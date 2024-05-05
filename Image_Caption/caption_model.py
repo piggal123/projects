@@ -1,6 +1,11 @@
 from transformers import BlipProcessor, BlipForConditionalGeneration
-from PIL import Image
+from PIL import Image, ImageFile
 from translate_function import translate
+
+# allowing truncated images to be loaded.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+# setting the maximum image pixels to 999999999.
+Image.MAX_IMAGE_PIXELS = 999999999
 
 class CaptionModel:
 
