@@ -15,3 +15,12 @@ the code sends a request to relativity server to retrieve text. The code is usin
 models, a russian to hebrew one (https://huggingface.co/Helsinki-NLP/opus-mt-ru-he) and arabic to
 hebrew one (https://huggingface.co/Helsinki-NLP/opus-mt-ar-he)
 
+
+**project OCR:**
+
+sending a request to relativity server to download the files, then iterating over them to perform
+OCR. the user can control the dpi, psm, if the image should be rotated and if he wants a fast 
+(runs once and rotates only 4 times) or a slow and more indepth run (saves the image with higher
+dpi, changing the psm if no text was found, rotating up to 8 times). during the OCR, the text
+is also going through a check to see if it's a real text or just gibberish. when the proccess
+is done, the results are uploaded to relativity
