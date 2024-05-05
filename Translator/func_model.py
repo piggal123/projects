@@ -97,13 +97,17 @@ def configure_logger(logger_name: str, log_file: str) -> Any:
     return logger
 
 
-def no_more_files(new_tk_vars: Any, st: Any, et: Any) -> None:
+def no_more_files(info_label: Any, st: Any, et: Any) -> None:
     """
     updating the gui to show the process is done and printing
     how much time the process took
-    
+    Args:
+        info_label (Tkinter label): a label which will be updated
+        st (time.time()): starting time
+        et (time.time()): end time
+          
     :return:
-    bool: True if there are no more files, false otherwise
+    None
     """
 
     new_tk_vars.info_label.config(text="done")
@@ -118,12 +122,13 @@ def convert_seconds(seconds: int) -> (str, str, str):
     """
     dividing the seconds to minute and hours to present better
     the time the program ran for
-    :param seconds: int, how many seconds the program ran for
+    :param seconds int: how many seconds the program ran for
     :return:
-    hours: string how many hours the program ran for
-    minutes: string how many minutes the program ran for
-    seconds: string how many seconds the program ran for
+    hours str:  how many hours the program ran for
+    minutes str:  how many minutes the program ran for
+    seconds str:  how many seconds the program ran for
     """
+    
     hours = seconds // 3600
     seconds %= 3600
     minutes = seconds // 60
@@ -140,6 +145,7 @@ def setting_tk_values(new_tk_vars: Any, i: int, objects_number: int) -> None:
     :return:
     None
     """
+    
     new_tk_vars.start_label.config(text=str(i * 30000))
     new_tk_vars.progress_bar['value'] = i * 30000
     new_tk_vars.progress_bar['maximum'] = objects_number + i * 30000
