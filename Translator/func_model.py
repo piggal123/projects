@@ -12,10 +12,10 @@ def install_translate_models() -> None:
     Return:
     None
     """
-    files = listdir(r"C:/projects/ICA_Translator/models")
+    files = listdir(path)
 
     for f in files:
-        package.install_from_path(r"C:/projects/ICA_Translator/models/" +f)
+        package.install_from_path(path)
 
 
 
