@@ -21,39 +21,39 @@ class TkVars:
         title.configure(font=font_tuple)
         title.grid(row=0, column=2)
 
-        label_one = Label(text="choose a folder to load from", font=font_text)
+        label_one = Label(text="choose a folder to load from", font=font_size)
         label_one.grid(row=1, column=2)
 
-        label_two = Label(text="then press start", font=font_text)
+        label_two = Label(text="then press start", font=font_size)
         label_two.grid(row=2, column=2)
 
-        case_id_label = Label(self.window, text="CaseID", font=font_text)
+        case_id_label = Label(self.window, text="CaseID", font=font_size)
         case_id_label.place(x=50, y=90)
 
-        self.workspace_error_label = Label(self.window, text=" ", font=font_text)
+        self.workspace_error_label = Label(self.window, text=" ", font=font_size)
         self.workspace_error_label.place(x=260, y=90)
 
         self.workspace_id_entry = Entry(self.window)
         self.workspace_id_entry.grid(row=3, column=2)
 
-        self.info_label = Label(text="", font=font_text, width=42)
+        self.info_label = Label(text="", font=font_size, width=42)
         self.info_label.grid(row=4, column=2)
 
-        self.start_label = Label(text="", font=font_text)
+        self.start_label = Label(text="", font=font_size)
         self.start_label.place(x=75, y=133)
 
         self.progress_bar = Progressbar(self.window, orient=HORIZONTAL, length=100, mode='determinate')
         
         self.progress_bar.grid(row=5, column=2)
 
-        self.end_label = Label(text=" ", font=font_text)
+        self.end_label = Label(text=" ", font=font_size)
         self.end_label.place(x=255, y=133)
 
         self.translate_progress_bar = Progressbar(self.window, orient=HORIZONTAL, length=100, mode='determinate')
         self.translate_progress_bar['maximum'] = 10
         self.translate_progress_bar.grid(row=6, column=2, pady=5)
 
-        self.thread_button = Checkbutton(text="no threads", variable=self.no_thread_check_box, font=font_text)
+        self.thread_button = Checkbutton(text="no threads", variable=self.no_thread_check_box, font=font_size)
         self.thread_button.grid(row=7, column=2)
 
         workers_options = []
@@ -74,7 +74,7 @@ class TkVars:
         language_menu = OptionMenu(self.window, self.language, *language_options)
         language_menu.grid(row=9, column=2)
 
-        self.language_error_label = Label(self.window, font=font_text, text="")
+        self.language_error_label = Label(self.window, font=font_size, text="")
         self.language_error_label.place(x=265, y=220)
 
 
