@@ -14,6 +14,7 @@ class TkVars:
             font_size (int): the size of the funt
             font_tuple (str, int, str): which font, size of it and setting it to bold of the header
         """
+        
         self.window = window
         self.no_thread_check_box = IntVar()
         self.chosen_languague = " "
@@ -97,7 +98,7 @@ class ErrorsWriter:
     def saving_excel(self, artifact_id: str, error: str) -> None:
         """
         updating the Excel with the file name and error, then saving it
-        :param artifact_id: str, the artifact id of the object
+        :param artifact_id: str, the unique key of the object in relativity
         :param error: str, which error occurred
         :return:
         None
