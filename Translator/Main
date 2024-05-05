@@ -65,9 +65,8 @@ def start(tk_vars: classes.TkVars) -> None:
     checker_thread.start()
 
 
-# downloading the files from relativity, updating the tk inter variables
 def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
-
+    
     """
     Updating the gui variables and calling the workflow_manager function
     :param tk_vars TkVars: a class instance that holds the tkinter info
