@@ -48,6 +48,16 @@ def push_request(artifact_id: str, workspace_id: str, head: {str, str}, text: st
 
 
 def download_file_request(workspace_id: str, artifact_id: str,  head: {str, str}) -> Any:
+    """
+    sending a get request to download the file from relativity
+    Args:
+        workspace_id (str):  the unique key of the case in relativity
+        artifact_id (str):  the unique key of the object in relativity
+        head (str, str): the required headers to access relativity
+
+    Returns:
+        Any: the repsonse from relativity
+    """
 
     response = get(url='https://relativity-web/Relativity.Rest/API/Relativity.Document/workspace/' +
                        workspace_id + '/downloadnativefile/' + artifact_id, headers=head, verify=False)
@@ -116,7 +126,7 @@ def clean_error_text(response: Any, logger: Any) -> None:
     :param response: the response from relativity
     :param logger: logging object
     :return:
-    the cleaned error text
+    str: the cleaned error text
     """
     try:
 
