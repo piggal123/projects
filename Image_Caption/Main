@@ -93,7 +93,7 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
     iterating through the objects, extracting the relevant data, saving them
     as files and calling the caption generator method
     :param tk_vars TkVars: a class instance that holds the tkinter info
-    :param temp_list [str]: objects list from relativity
+    :param partial_objects_list [str]: objects list from relativity
     :param lock_required bool: checker if threads are being used or just a single one
     :return:
     None
