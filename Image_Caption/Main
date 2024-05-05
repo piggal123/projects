@@ -139,15 +139,17 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
 
                 
                 errors_class.saving_excel(artifact_id, text)
+
         gui_vars.done_files += 1
+
         if lock_required:
         # making sure the theards won't access the same variable at the same time
             with lock:
-                func_model.show_progress(done_files, start_label, progress_bar)
+                func_model.show_progress(gui_vars.done_files, tk_vars.start_label, tk_vars.progress_bar)
 
         else:
 
-            func_model.show_progress(done_files, start_label, progress_bar)
+            func_model.show_progress(gui_vars.done_files, tk_vars.start_label, tk_vars.progress_bar)
 
 
 def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
