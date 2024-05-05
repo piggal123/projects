@@ -7,10 +7,15 @@ from typing import Any
 class TkVars:
 
     def __init__(self, window, font_text, font_tuple):
+        """
+        :param window:
+        :param font_text:
+        :param font_tuple:
 
+        """
         self.window = window
         self.no_thread_check_box = IntVar()
-
+        self.chosen_languague = " "
         title = Label(text="TRANSLATOR")
         title.configure(font=font_tuple)
         title.grid(row=0, column=2)
@@ -25,7 +30,7 @@ class TkVars:
         case_id_label.place(x=50, y=90)
 
         self.workspace_error_label = Label(self.window, text=" ", font=font_text)
-        self.workspace_error_label.place(x=280, y=90)
+        self.workspace_error_label.place(x=260, y=90)
 
         self.workspace_id_entry = Entry(self.window)
         self.workspace_id_entry.grid(row=3, column=2)
@@ -37,31 +42,36 @@ class TkVars:
         self.start_label.place(x=75, y=133)
 
         self.progress_bar = Progressbar(self.window, orient=HORIZONTAL, length=100, mode='determinate')
+        
         self.progress_bar.grid(row=5, column=2)
 
         self.end_label = Label(text=" ", font=font_text)
         self.end_label.place(x=255, y=133)
 
+        self.translate_progress_bar = Progressbar(self.window, orient=HORIZONTAL, length=100, mode='determinate')
+        self.translate_progress_bar['maximum'] = 10
+        self.translate_progress_bar.grid(row=6, column=2, pady=5)
+
         self.thread_button = Checkbutton(text="no threads", variable=self.no_thread_check_box, font=font_text)
-        self.thread_button.grid(row=6, column=2)
+        self.thread_button.grid(row=7, column=2)
 
         workers_options = []
 
-        for i in range(1, 7):
+        for i in range(1, 16):
             workers_options.append(str(i))
 
         self.workers = StringVar(self.window)
         self.workers.set("Select Threads")
 
         workers_menu = OptionMenu(self.window, self.workers, *workers_options)
-        workers_menu.grid(row=7, column=2)
+        workers_menu.grid(row=8, column=2)
 
         language_options = ["arabic", "russian", "english"]
         self.language = StringVar(self.window)
         self.language.set("Select Language")
 
         language_menu = OptionMenu(self.window, self.language, *language_options)
-        language_menu.grid(row=8, column=2)
+        language_menu.grid(row=9, column=2)
 
         self.language_error_label = Label(self.window, font=font_text, text="")
         self.language_error_label.place(x=265, y=220)
