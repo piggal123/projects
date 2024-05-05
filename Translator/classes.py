@@ -6,8 +6,8 @@ from typing import Any
 
 class TkVars:
 
-    def __init__(self, window, font_text, font_tuple):
-        """
+    def __init__(self, window: Any, font_size: int, font_tuple: {str, int, str}):
+        """_summary_
         setting the tkvars class
         Args:
             window (tkinter window): the window of tkinter
