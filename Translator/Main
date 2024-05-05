@@ -110,7 +110,7 @@ def workflow_manager(tk_vars: classes.TkVars, partial_objects_list: [str], lock_
     it, then calling the translate function. creating a push request to relativity
     to update the field
     :param tk_vars TkVars: a class instance that holds the tkinter info
-    :param temp_list [str]: objects list from relativity
+    :param partial_objects_list [str]: objects list from relativity
     :param lock_required bool: checker if threads are being used or just a single one
     :return:
     None
