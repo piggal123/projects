@@ -185,6 +185,60 @@ def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
         pool.join()
 
 
+def loop_start(tk_vars: classes.TkVars) -> None:
+    """_summary_
+    starting the loop to iterate through the objects from relativity
+    Args:
+        tk_vars (classes.TkVars): a class instance that holds the tkinter info
+
+    Returns:
+        None
+    """
+    for i in range(50000):
+
+        if i == 0:
+
+            start_loop_time_tracker = time.time()
+
+            # waiting for the response from relativity
+            while True:
+                try:
+                    partial_objects_list = all_objects[i]
+
+                    # we got a response, the list isn't empty, break the loop
+                    if len(partial_objects_list) > 0:
+                        
+                        info_download(tk_vars, partial_objects_list, i)
+                        break
+                    during_loop_time_tracker = time.time()
+
+                    # too much time went by, user didn't mark anything in relativity
+                    if during_loop_time_tracker - start_loop_time_tracker > 15:
+                        print("did you mark the right conditions in relativity?")
+                        break
+                except:
+                    pass
+                time.sleep(1)
+
+        # not the first iteration, no need to wait anymore for response        
+        else:
+            # checking if there are objects to itreate through or we done
+            try:
+                partial_objects_list = all_objects[i]
+
+                if len(partial_objects_list) > 0:
+                    
+                    info_download(tk_vars, partial_objects_list, i)
+
+            except:
+
+                et = time.time()
+                func_model.no_more_files(tk_vars, gui_vars.st, et)
+                stop_flag = True
+                background_thread.join()
+                break
+
+
 def checker(tk_vars: classes.TkVars) -> None:
     """
     checking if user input are legal
@@ -222,35 +276,7 @@ def checker(tk_vars: classes.TkVars) -> None:
         # Start the thread
         background_thread.start()
 
-        for i in range(50000):
-
-
-            if i == 0:
-                start_loop_time_tracker = time.time()
-                while True:
-                    try:
-                        partial_objects_list = all_objects[i]
-                        if len(partial_objects_list) > 0:
-                            info_download(tk_vars, partial_objects_list, i)
-                            break
-                        during_loop_time_tracker = time.time()
-                        if during_loop_time_tracker - start_loop_time_tracker > 10:
-                            print("did you mark the right conditions in relativity?")
-                            break
-                    except:
-                        pass
-                    time.sleep(1)
-            else:
-                try:
-                    partial_objects_list = all_objects[i]
-                    if len(partial_objects_list) > 0:
-                        info_download(tk_vars, partial_objects_list, i)
-                except:
-                    et = time.time()
-                    func_model.no_more_files(tk_vars.info_label, gui_vars.st, et)
-                    stop_flag = True
-                    background_thread.join()
-                    break
+        loop_start(tk_vars)
 
 
 def gui_configuration() -> None:
