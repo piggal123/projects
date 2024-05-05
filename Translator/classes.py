@@ -8,10 +8,11 @@ class TkVars:
 
     def __init__(self, window, font_text, font_tuple):
         """
-        :param window:
-        :param font_text:
-        :param font_tuple:
-
+        setting the tkvars class
+        Args:
+            window (tkinter window): the window of tkinter
+            font_size (int): the size of the funt
+            font_tuple (str, int, str): which font, size of it and setting it to bold of the header
         """
         self.window = window
         self.no_thread_check_box = IntVar()
