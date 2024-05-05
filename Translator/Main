@@ -242,11 +242,11 @@ def gui_configuration() -> None:
     None
     """
     font_tuple = ("Comic Sans MS", 20, "bold")
-    font_text = 14
+    font_size = 14
 
-    tk_vars = classes.TkVars(window, font_text, font_tuple)
+    tk_vars = classes.TkVars(window, font_size, font_tuple)
 
-    start_button = Button(text="start", font=font_text,
+    start_button = Button(text="start", font=font_size,
                           command=lambda: start(tk_vars))
     start_button.grid(row=15, column=2)
 
