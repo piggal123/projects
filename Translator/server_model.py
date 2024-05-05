@@ -49,7 +49,7 @@ def push_request(text: str, artifact_id: str, workspace_id: str, head: {str, str
         return False
 
 
-def pull_request(workspace_id: str, i: int, head: {str, str}) -> Any:
+def pull_request(workspace_id: str, i: int, head: {str, str}) -> [str]:
 
     """
     creating pull request to relativity to get the objects from the server
