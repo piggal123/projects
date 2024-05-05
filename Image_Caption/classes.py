@@ -86,7 +86,7 @@ class ErrorsWriter:
     def saving_excel(self, artifact_id: str, error: str) -> None:
         """
         updating the Excel with the file name and error, then saving it
-        :param artifact_id str: the artifact id of the object
+        :param artifact_id str: the unique key of the object in relativity
         :param error str: which error occurred
         :return:
         None
