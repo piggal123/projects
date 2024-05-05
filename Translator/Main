@@ -55,7 +55,7 @@ def start(tk_vars: classes.TkVars) -> None:
     """
     Starting the code in a different thread so the gui won't freeze
     args:
-        tk_vars TkVars: a class instance that holds the tkinter info
+        tk_vars classes.TkVars: a class instance that holds the tkinter info
     :return:
     None
     """
@@ -69,7 +69,7 @@ def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
     
     """
     Updating the gui variables and calling the workflow_manager function
-    :param tk_vars TkVars: a class instance that holds the tkinter info
+    :param tk_vars classes.TkVars: a class instance that holds the tkinter info
     :param objects [str]: list of objects from relativity
     :param objects [str]: of objects from relativity
     :param i int: the number of the run
@@ -109,7 +109,7 @@ def workflow_manager(tk_vars: classes.TkVars, partial_objects_list: [str], lock_
     retrieving the file's text from relativity, removing hebrew and numbers from
     it, then calling the translate function. creating a push request to relativity
     to update the field
-    :param tk_vars TkVars: a class instance that holds the tkinter info
+    :param tk_vars classes.TkVars: a class instance that holds the tkinter info
     :param partial_objects_list [str]: objects list from relativity
     :param lock_required bool: checker if threads are being used or just a single one
     :return:
@@ -221,7 +221,7 @@ def loop_start(tk_vars: classes.TkVars) -> None:
 def checker(tk_vars: classes.TkVars) -> None:
     """
     checking if user input are legal
-    :param tk_vars TkVars: a class instance that holds the tkinter info 
+    :param tk_vars classes.TkVars: a class instance that holds the tkinter info 
     :return:
     None
     """
