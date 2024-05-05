@@ -30,7 +30,6 @@ st = time.time()
 gui_vars = classes.GuiVars(st)
 errors_class = classes.ErrorsWriter(func_model.get_current_time(), "errors//")
 stop_flag = False
-result_df = classes.ResultsDf()
 caption_model = CaptionModel("blip_caption_model")
 translate_model = Translator("eng_to_heb")
 
