@@ -3,7 +3,7 @@ from typing import Any
 
 
 def push_request(text: str, artifact_id: str, workspace_id: str, head: {str, str}) -> bool:
-    """
+    """_summary_
     sending a push request to relativity to update the relevant fields
     Args:
         text (str): the translated text 
@@ -23,13 +23,13 @@ def push_request(text: str, artifact_id: str, workspace_id: str, head: {str, str
                 {
                     "Field":
                         {
-                            "Name": "field_name"
+                            "Name": "ICA_TRANSLATION"
                         },
                     "Value": text
                 },
                 {
                     "Field": {
-                        "Name": "field_name"
+                        "Name": "ICA_TRANSLATE"
                     },
 
                     "Value": False
@@ -42,6 +42,7 @@ def push_request(text: str, artifact_id: str, workspace_id: str, head: {str, str
                     'https://relativity-web/Relativity.Rest/API/Relativity.Objects/workspace/' + workspace_id +
                     '/object/update', json=update_body, headers=head, verify=False)
     if response.ok:
+     
         return True
     else:
         print("ERROR:", artifact_id)
@@ -56,7 +57,7 @@ def pull_request(workspace_id: str, i: int, head: {str, str}) -> Any:
     :param head {str,str}:  the required headers to access relativity
     :param i int: which loop number it is
     :return:
-    str: the response from relativity
+    str, the response from relativity
     """
 
     request_body = {
@@ -65,7 +66,7 @@ def pull_request(workspace_id: str, i: int, head: {str, str}) -> Any:
                 "ArtifactTypeID": 10
             },
 
-            "condition": "'field_name' == True",
+            "condition": "'ICA_TRANSLATE' == True",
             "sorts": [
             ]
         },
@@ -83,28 +84,27 @@ def pull_request(workspace_id: str, i: int, head: {str, str}) -> Any:
     return data
 
 
-def long_text_pull_request(artifact_id: str, head: {str, str}) -> str:
+def long_text_pull_request(artifact_id: str, head: {str, str}, workspace_id: str) -> str:
     """
     getting the text from relativity. because it's a long text, it requires
     a different request
-    :param artifact_id (str): the unique key of the object in relativity 
-    :param head (str, str): the required headers to access relativity
+    :param artifact_id: the unique key of the case in relativity
+    :param head: the required headers to access relativity
     :return:
-    str: the response from relativity
     """
-    requests_body = {
+    request_body = {
         "exportObject": {
             "ArtifactID": artifact_id
         },
         "longTextField": {
-            "Name": "field_name",
+            "Name": "Extracted Text",
         }
 
     }
-    response = post(url='https://relativity-web/Relativity.Rest/API/Relativity.ObjectManager/v1/workspace/' +
-                        '4702628/object/streamlongtext',
-                    json=requests_body, headers=head, verify=False)
-
+    response = post(url='https://relativity-web/Relativity.Rest/API/Relativity.ObjectManager/v1/workspace/' + 
+                    workspace_id + '/object/streamlongtext',
+                    json=request_body, headers=head, verify=False)
+        
     return response.text
 
 
