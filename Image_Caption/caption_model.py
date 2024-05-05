@@ -10,8 +10,8 @@ Image.MAX_IMAGE_PIXELS = 999999999
 class CaptionModel:
 
     def __init__(self, model_name: str):
-        self.processor = BlipProcessor.from_pretrained("C:/projects/ICA_Image_Caption/" +model_name)
-        self.model = BlipForConditionalGeneration.from_pretrained("C:/projects/ICA_Image_Caption/" + model_name)
+        self.processor = BlipProcessor.from_pretrained(path +model_name)
+        self.model = BlipForConditionalGeneration.from_pretrained(path + model_name)
 
     def caption_image(self, file_path: str) -> str:
         """
