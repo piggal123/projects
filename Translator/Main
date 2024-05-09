@@ -7,7 +7,7 @@ from threading import Lock, Thread
 from multiprocessing.pool import ThreadPool
 import server_model
 from relativity_settings import head
-from translate_function import translate
+from translate_function import middleman
 import time
 from os import environ
 
@@ -131,7 +131,7 @@ def workflow_manager(tk_vars: classes.TkVars, partial_objects_list: [str], lock_
                 
                 translate_language = tk_vars.chosen_languague[0] + tk_vars.chosen_languague[1]
                 
-                translated_text = translate(text_to_translate, tk_vars.translate_progress_bar, translate_language)
+                translated_text = middleman(text_to_translate, tk_vars.translate_progress_bar, translate_language)
 
                 if server_model.push_request(translated_text, artifact_id, gui_vars.workspace_id, head):
                     print("file ", artifact_id, " was translated")
