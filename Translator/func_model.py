@@ -35,7 +35,7 @@ def show_progress(done_files: int, start_label: Any, progress_bar: Any, config_s
 
 
 
-def split_text(text, chunk_size) -> [str]:
+def split_text(text: str, chunk_size: int) -> [str]:
     """
     splitting the text by a chosen amount of chars
     Args:
