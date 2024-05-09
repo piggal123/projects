@@ -32,8 +32,9 @@ def add_to_list(workspace_id: str, thread_name: str) -> None:
     """
     i = 0
     while not stop_flag:
-     
+        
         data = server_model.pull_request(workspace_id, i, head, thread_name)
+       
         all_objects.append(data)
 
         i += 1
@@ -220,7 +221,7 @@ def extract_text(file_path: str, suffix: str, thread_name: str, dpi: int, psm: s
     remove(file_path)
 
 
-def loop_start(tk_vars: classes.TkVars) -> None:
+def loop_start(tk_vars: classes.TkVars, thread_name: str) -> None:
     """_summary_
     starting the loop to iterate through the objects from relativity
     Args:
@@ -234,24 +235,30 @@ def loop_start(tk_vars: classes.TkVars) -> None:
         if i == 0:
 
             start_loop_time_tracker = time.time()
-
+            
             # waiting for the response from relativity
             while True:
+                
                 try:
+
                     partial_objects_list = all_objects[i]
 
                     # we got a response, the list isn't empty, break the loop
                     if len(partial_objects_list) > 0:
                         
-                        info_download(tk_vars, partial_objects_list, i)
+                        info_download(tk_vars, partial_objects_list, i, thread_name)
                         break
-                    during_loop_time_tracker = time.time()
-
+                
                     # too much time went by, user didn't mark anything in relativity
-                    if during_loop_time_tracker - start_loop_time_tracker > 15:
+                    if func_model.run_time_checker(start_loop_time_tracker):
                         print("did you mark the right conditions in relativity?")
                         break
-                except:
+                    
+                except Exception as e:
+                    if func_model.run_time_checker(start_loop_time_tracker):
+                        print("error is", e)
+                        logger.error("An exception occurred " , exc_info=True)
+                        break
                     pass
                 time.sleep(1)
 
@@ -263,7 +270,7 @@ def loop_start(tk_vars: classes.TkVars) -> None:
 
                 if len(partial_objects_list) > 0:
                     
-                    info_download(tk_vars, partial_objects_list, i)
+                    info_download(tk_vars, partial_objects_list, i, thread_name)
 
             except:
 
@@ -330,9 +337,10 @@ def checker(tk_vars: classes.TkVars, thread_name: str, second_thread: MyThread) 
         background_thread.start()
 
         if thread_name == "second":
+            print("here")
             all_objects.clear()
 
-        loop_start(tk_vars)
+        loop_start(tk_vars, thread_name)
 
         if thread_name == "first" and tk_vars.no_rot.get() == 0:
           
