@@ -4,16 +4,6 @@ from classes import StringListIterator
 from typing import Any
 
 
-def advance_progress_bar(i: int, j: int, translate_progress_bar: Any) -> None:
-    """_summary_
-    advancing the progress bar every ten iterations
-    Args:
-        i (int): keeps track of the iterations
-        j (int): the value the progress bar should show, resets every 100 iterations
-    """
-    
-    
-
 def translate(sentence: str, language: str) -> str:
     """_summary_
     calls the argostranslate model to translate the text
