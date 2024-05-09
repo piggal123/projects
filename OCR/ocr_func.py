@@ -2,13 +2,15 @@ from os import remove
 import pytesseract
 from PIL import Image, ImageFile
 from func_model import is_language
-from io import BytesIO
 from typing import Any
 import warnings
+from numba import jit, cuda 
 
-pytesseract.pytesseract.tesseract_cmd = path
+
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
 warnings.catch_warnings()
 warnings.simplefilter("ignore")
+
 
 
 def rotate_images(img: Image, number: int) -> Image:
@@ -40,6 +42,7 @@ def rotate_images(img: Image, number: int) -> Image:
     except OSError as e:
         print("oserror:", e)
         return img
+
 
 
 def rotation_settings(file_path: str, thread_name: str, dpi: int, psm: str, no_rot: Any) -> (str, bool, int):
@@ -193,7 +196,7 @@ def rotate(file_path: str, image_name: str, dpi: int, psm: str, no_rot: Any) -> 
     pdf_to_image = []
     try:
         # getting info from the pdf, checking how many pages it has
-        info = pdfinfo_from_path(file_path, poppler_path=path)
+        info = pdfinfo_from_path(file_path, poppler_path=r"C:\developement_projects\poppler\Library\bin")
 
     except:
 
@@ -202,7 +205,7 @@ def rotate(file_path: str, image_name: str, dpi: int, psm: str, no_rot: Any) -> 
 
     for page in range(1, max_pages + 1, 10):
         pdf_to_image += convert_from_path(file_path, dpi=dpi,
-                                          poppler_path=path, first_page=page,
+                                          poppler_path=r"C:\developement_projects\poppler\Library\bin", first_page=page,
                                           last_page=min(page + 10 - 1, max_pages))
 
 
@@ -221,37 +224,3 @@ def rotate(file_path: str, image_name: str, dpi: int, psm: str, no_rot: Any) -> 
 
     return final_text, found_text, counter
 
-
-
-def save_image(response: Any, thread_name: str, artifact_id: str, dpi: int) -> None:
-    """
-    saving the image as pdf to be able to extract the text out of it
-    :param response: the response from relativity
-    :param thread_name: the name of the thread
-    :param artifact_id: the unique key of the object in relativity
-    :param dpi: which dpi to save the file at 
-    :return:
-    None
-    """
-  
-    img = Image.open(BytesIO(response.content))
-
-    pdf = img.convert('RGB')
-    if thread_name == "first":
-      
-        # saving the picture as pdf
-        pdf.save("files//" + artifact_id + ".pdf", 'PDF', resolution=dpi)
-
-    else:
-
-        # checking if the user didn't choose a dpi higher than the default
-
-        if dpi < 300:
-
-            pdf.save("files//" + artifact_id + ".pdf", 'PDF', resolution=300)
-
-        # the user chose a higher dpi, increasing the picture dpi as a result for the second
-        # run
-        else:
-            pdf.save("files//" + artifact_id + ".pdf", 'PDF',
-                     resolution=dpi + 300)
