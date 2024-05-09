@@ -1,10 +1,62 @@
 from typing import Any
 import re
+from io import BytesIO
 import logging
 from datetime import datetime
 from os import path, makedirs
-from ocr_func import save_image
+from PIL import Image
+import time
 from file_formats import supported_format_list
+
+
+def run_time_checker(start_time: time.time()) -> bool:
+    """_summary_
+    checking if the action takes more than 15 seconds
+    Args:
+        start_time (time.time()): the time the action started 
+
+    Returns:
+        bool: True if the action took longer than 15 seconds, false otherwise
+    """
+    during_loop_time_tracker = time.time()
+    if during_loop_time_tracker - start_time > 15:
+        return True
+    return False    
+
+
+def save_image(response: Any, thread_name: str, artifact_id: str, dpi: int) -> None:
+    """
+    saving the image as pdf to be able to extract the text out of it
+    :param response: the response from relativity
+    :param thread_name: the name of the thread
+    :param artifact_id: the unique key of the object in relativity
+    :param dpi: which dpi to save the file at 
+    :return:
+    None
+    """
+  
+    img = Image.open(BytesIO(response.content))
+
+    pdf = img.convert('RGB')
+    if thread_name == "first":
+      
+        # saving the picture as pdf
+        pdf.save("files//" + artifact_id + ".pdf", 'PDF', resolution=dpi)
+
+    else:
+
+        # checking if the user didn't choose a dpi higher than the default
+
+        if dpi < 300:
+
+            pdf.save("files//" + artifact_id + ".pdf", 'PDF', resolution=300)
+
+        # the user chose a higher dpi, increasing the picture dpi as a result for the second
+        # run
+        else:
+            pdf.save("files//" + artifact_id + ".pdf", 'PDF',
+                     resolution=dpi + 300)
+
 
 
 def saving_file(response: Any, artifact_id: str, suffix: str, thread_name: str, dpi: int) -> str:
@@ -186,7 +238,7 @@ def configure_logger(logger_name: str, log_file: str) -> Any:
     return logger
 
 
-def no_more_files(new_tk_vars: Any, st: Any, et: Any) -> None:
+def no_more_files(info_label: Any, st: Any, et: Any) -> None:
     """
     updating the gui to show the process is done and printing
     how much time the process took
@@ -194,7 +246,7 @@ def no_more_files(new_tk_vars: Any, st: Any, et: Any) -> None:
     bool: True if there are no more files, false otherwise
     """
 
-    new_tk_vars.info_label.config(text="done")
+    info_label.config(text="done")
 
     total_time = et - st
 
