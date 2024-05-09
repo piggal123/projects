@@ -12,13 +12,7 @@ def advance_progress_bar(i: int, j: int, translate_progress_bar: Any) -> None:
         j (int): the value the progress bar should show, resets every 100 iterations
     """
     
-    i += 1
-    if j == 10:
-        j = 0
-    if i % 10 == 0:
-        j += 1
-    show_progress(j,"",translate_progress_bar, False)
-
+    
 
 def translate(sentence: str, language: str) -> str:
     """_summary_
@@ -56,7 +50,14 @@ def middleman(text: str, translate_progress_bar : Any, language: str) -> str:
         
         final_text += mini_translate(sentence, language)
 
-        advance_progress_bar(i,j, translate_progress_bar)
+        i += 1
+        if j == 10:
+            j = 0
+        if i % 10 == 0:
+            j += 1
+
+        show_progress(j,"",translate_progress_bar, False)
+
         
     return final_text
 
