@@ -4,8 +4,40 @@ from classes import StringListIterator
 from typing import Any
 
 
+def advance_progress_bar(i: int, j: int, translate_progress_bar: Any) -> None:
+    """_summary_
+    advancing the progress bar every ten iterations
+    Args:
+        i (int): keeps track of the iterations
+        j (int): the value the progress bar should show, resets every 100 iterations
+    """
+    
+    i += 1
+    if j == 10:
+        j = 0
+    if i % 10 == 0:
+        j += 1
+        show_progress(j,"",translate_progress_bar, False)
 
-def translate(text: str, trans_progress_bar : Any, language: str) -> str:
+
+def translate(sentence: str, language: str) -> str:
+    """_summary_
+    calls the argostranslate model to translate the text
+    Args:
+        sentence (str): the text that will be translated
+        language (str): which language the text is
+
+    Returns:
+        str: the translated text
+    """
+    
+    if language != "en":
+        sentence = argostranslate.translate.translate(sentence, language, "en")
+
+
+    return (argostranslate.translate.translate(sentence, "en", "he"))
+
+def middleman(text: str, translate_progress_bar : Any, language: str) -> str:
     """
     splitting the text into iterator by calling the function split_text and creating an
     StringListIterator class instance by using the returned list. translating the
@@ -22,23 +54,9 @@ def translate(text: str, trans_progress_bar : Any, language: str) -> str:
     
     for sentence in text_iterator:
         
-        if language != "en":
-            translated_to_english = argostranslate.translate.translate(sentence, language, "en")
+        final_text += mini_translate(sentence, language)
 
-            translated_to_hebrew = argostranslate.translate.translate(translated_to_english, "en", "he")
-
-        else: 
-            translated_to_hebrew = argostranslate.translate.translate(sentence, "en", "he")
-
-        # every ten iterations, advance the progerss bar
-        i += 1
-        if j == 10:
-            j = 0
-        if i % 10 == 0:
-            j += 1
-            show_progress(j,"",trans_progress_bar, False)
-
-        final_text += translated_to_hebrew
+        advance_progress_bar(i,j, translate_progress_bar)
         
-
     return final_text
+
