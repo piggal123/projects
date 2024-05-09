@@ -17,7 +17,7 @@ def advance_progress_bar(i: int, j: int, translate_progress_bar: Any) -> None:
         j = 0
     if i % 10 == 0:
         j += 1
-        show_progress(j,"",translate_progress_bar, False)
+    show_progress(j,"",translate_progress_bar, False)
 
 
 def translate(sentence: str, language: str) -> str:
