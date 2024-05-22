@@ -13,7 +13,6 @@ import server_model
 from caption_model import CaptionModel
 
 
-
 lock = Lock
 all_objects = []
 func_model.create_folder("logs//")
@@ -27,22 +26,32 @@ stop_flag = False
 caption_model = CaptionModel("blip_caption_model")
 
 
+if __name__ == "__main__":
+    window = Tk()
+    window.geometry('380x400')
+    func_model.install_translate_models()
 
-def add_to_list(workspace_id: str) -> None:
+    gui_configuration()
+
+
+def gui_configuration() -> None:
     """
-    calling the pull request until there are none more objects
-    to pull
-    :param workspace_id str: the unique key of the case in relativity
-    :return: None
+    creating a TkVars instance to generate the tkinter view
+    :return:
+    None
     """
-    i = 0
-    while not stop_flag:
-        data = server_model.pull_request(workspace_id, i, head)
-        all_objects.append(data)
-    
-        i += 1
-        if not data:
-            break
+    # setting the font for the tittle
+    font_tuple = ("Comic Sans MS", 20, "bold")
+    font_size = 14
+
+    tk_vars = classes.TkVars(window, font_size, font_tuple)
+
+    start_button = Button(text="start", font=font_size,
+                          command=lambda: start(tk_vars))
+    start_button.grid(row=11, column=2)
+
+    window.focus()
+    window.mainloop()
 
 
 class MyThread(Thread):
@@ -69,17 +78,149 @@ def start(tk_vars: classes.TkVars) -> None:
     checker_thread.start()
 
 
-def caption_generator(file_path: str) -> str:
-    """
-    calling the caption image function to generate a caption to the image
-    param file_path: str, the path to the file
-    :return:
-    str: the image caption
-    """
-    caption_text = caption_model.caption_image(file_path)
- 
-    return caption_text
 
+def checker(tk_vars: classes.TkVars) -> None:
+    """
+    checking if user input are legal
+    :param tk_vars:
+    :return:
+    None
+    """
+
+    workspace_id = tk_vars.workspace_id_entry.get()
+
+    if workspace_id == "":
+
+        tk_vars.workspace_error_label.config(text="ENTER CASE ID", fg="red")
+
+    else:
+        tk_vars.workspace_error_label.config(text="V", fg="green")
+
+        gui_vars.workspace_id = workspace_id
+
+        warnings.catch_warnings()
+        warnings.simplefilter("ignore")
+        try:
+            gui_vars.workers = int(tk_vars.workers.get())
+
+        except:
+            gui_vars.workers = 15
+
+        func_model.create_folder("errors//")
+        func_model.create_folder("files//")
+
+        tk_vars.info_label.config(text="waiting for response")
+
+        background_thread = Thread(target=lambda: add_to_list(gui_vars.workspace_id))
+
+        # Start the thread
+        background_thread.start()
+
+        loop_start(tk_vars)
+
+
+def add_to_list(workspace_id: str) -> None:
+    """
+    calling the pull request until there are none more objects
+    to pull
+    :param workspace_id str: the unique key of the case in relativity
+    :return: None
+    """
+    i = 0
+    while not stop_flag:
+        data = server_model.pull_request(workspace_id, i, head)
+        all_objects.append(data)
+    
+        i += 1
+        if not data:
+            break
+
+
+def loop_start(tk_vars: classes.TkVars) -> None:
+    """_summary_
+    starting the loop to iterate through the objects from relativity
+    Args:
+        tk_vars (classes.TkVars): a class instance that holds the tkinter info
+
+    Returns:
+        None
+    """
+    for i in range(50000):
+
+        if i == 0:
+
+            start_loop_time_tracker = time.time()
+
+            # waiting for the response from relativity
+            while True:
+                try:
+                    partial_objects_list = all_objects[i]
+
+                    # we got a response, the list isn't empty, break the loop
+                    if len(partial_objects_list) > 0:
+                        
+                        info_download(tk_vars, partial_objects_list, i)
+                        break
+                    during_loop_time_tracker = time.time()
+
+                    # too much time went by, user didn't mark anything in relativity
+                    if during_loop_time_tracker - start_loop_time_tracker > 15:
+                        print("did you mark the right conditions in relativity?")
+                        break
+                except:
+                    pass
+                time.sleep(1)
+
+        # not the first iteration, no need to wait anymore for response        
+        else:
+            # checking if there are objects to itreate through or we done
+            try:
+                partial_objects_list = all_objects[i]
+
+                if len(partial_objects_list) > 0:
+                    
+                    info_download(tk_vars, partial_objects_list, i)
+
+            except:
+
+                et = time.time()
+                func_model.no_more_files(tk_vars.info_label, gui_vars.st, et)
+                stop_flag = True
+                background_thread.join()
+                break
+
+
+def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
+    """
+    Updating the gui variables and calling the files_download function
+    :param tk_vars classes.TkVars: a class instance that holds the tkinter info
+    :param objects [str]: list of objects from relativity
+    :param i int: the number of the run
+    :return:
+    None
+    """
+    tk_vars.info_label.config(text="in progress")
+
+    func_model.setting_tk_values(tk_vars, i, len(objects))
+
+    # checking if the no threads check box was checked
+    if tk_vars.no_thread_check_box.get() == 1:
+        
+        files_download(tk_vars, objects, False)
+
+    else:
+        pool = ThreadPool(processes=gui_vars.workers)
+        threads = []
+        chunk_iterator = classes.ChunkIterator(objects, gui_vars.workers)
+
+        for partial_objects_list in chunk_iterator:
+            threads.append(pool.apply_async(files_download, (tk_vars, partial_objects_list, True)))
+
+        for thread in threads:
+            thread.get()
+
+        pool.close()
+        pool.join()
 
 
 def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_required: bool) -> None:
@@ -147,156 +288,22 @@ def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], lock_re
             func_model.show_progress(gui_vars.done_files, tk_vars.start_label, tk_vars.progress_bar)
 
 
-def info_download(tk_vars: classes.TkVars, objects: [str], i: int) -> None:
+def caption_generator(file_path: str) -> str:
     """
-    Updating the gui variables and calling the files_download function
-    :param tk_vars classes.TkVars: a class instance that holds the tkinter info
-    :param objects [str]: list of objects from relativity
-    :param i int: the number of the run
+    calling the caption image function to generate a caption to the image
+    param file_path: str, the path to the file
     :return:
-    None
+    str: the image caption
     """
-    tk_vars.info_label.config(text="in progress")
-
-    func_model.setting_tk_values(tk_vars, i, len(objects))
-
-    # checking if the no threads check box was checked
-    if tk_vars.no_thread_check_box.get() == 1:
-        
-        files_download(tk_vars, objects, False)
-
-    else:
-        pool = ThreadPool(processes=gui_vars.workers)
-        threads = []
-        chunk_iterator = classes.ChunkIterator(objects, gui_vars.workers)
-
-        for partial_objects_list in chunk_iterator:
-            threads.append(pool.apply_async(files_download, (tk_vars, partial_objects_list, True)))
-
-        for thread in threads:
-            thread.get()
-
-        pool.close()
-        pool.join()
+    caption_text = caption_model.caption_image(file_path)
+ 
+    return caption_text
 
 
-def loop_start(tk_vars: classes.TkVars) -> None:
-    """_summary_
-    starting the loop to iterate through the objects from relativity
-    Args:
-        tk_vars (classes.TkVars): a class instance that holds the tkinter info
-
-    Returns:
-        None
-    """
-    for i in range(50000):
-
-        if i == 0:
-
-            start_loop_time_tracker = time.time()
-
-            # waiting for the response from relativity
-            while True:
-                try:
-                    partial_objects_list = all_objects[i]
-
-                    # we got a response, the list isn't empty, break the loop
-                    if len(partial_objects_list) > 0:
-                        
-                        info_download(tk_vars, partial_objects_list, i)
-                        break
-                    during_loop_time_tracker = time.time()
-
-                    # too much time went by, user didn't mark anything in relativity
-                    if during_loop_time_tracker - start_loop_time_tracker > 15:
-                        print("did you mark the right conditions in relativity?")
-                        break
-                except:
-                    pass
-                time.sleep(1)
-
-        # not the first iteration, no need to wait anymore for response        
-        else:
-            # checking if there are objects to itreate through or we done
-            try:
-                partial_objects_list = all_objects[i]
-
-                if len(partial_objects_list) > 0:
-                    
-                    info_download(tk_vars, partial_objects_list, i)
-
-            except:
-
-                et = time.time()
-                func_model.no_more_files(tk_vars.info_label, gui_vars.st, et)
-                stop_flag = True
-                background_thread.join()
-                break
 
 
-def checker(tk_vars: classes.TkVars) -> None:
-    """
-    checking if user input are legal
-    :param tk_vars:
-    :return:
-    None
-    """
-
-    workspace_id = tk_vars.workspace_id_entry.get()
-
-    if workspace_id == "":
-
-        tk_vars.workspace_error_label.config(text="ENTER CASE ID", fg="red")
-
-    else:
-        tk_vars.workspace_error_label.config(text="V", fg="green")
-
-        gui_vars.workspace_id = workspace_id
-
-        warnings.catch_warnings()
-        warnings.simplefilter("ignore")
-        try:
-            gui_vars.workers = int(tk_vars.workers.get())
-
-        except:
-            gui_vars.workers = 15
-
-        func_model.create_folder("errors//")
-        func_model.create_folder("files//")
-
-        tk_vars.info_label.config(text="waiting for response")
-
-        background_thread = Thread(target=lambda: add_to_list(gui_vars.workspace_id))
-
-        # Start the thread
-        background_thread.start()
-
-        loop_start(tk_vars)
 
 
-def gui_configuration() -> None:
-    """
-    creating a TkVars instance to generate the tkinter view
-    :return:
-    None
-    """
-    # setting the font for the tittle
-    font_tuple = ("Comic Sans MS", 20, "bold")
-    font_size = 14
-
-    tk_vars = classes.TkVars(window, font_size, font_tuple)
-
-    start_button = Button(text="start", font=font_size,
-                          command=lambda: start(tk_vars))
-    start_button.grid(row=11, column=2)
-
-    window.focus()
-    window.mainloop()
 
 
-if __name__ == "__main__":
-    window = Tk()
-    window.geometry('380x400')
-    func_model.install_translate_models()
 
-    gui_configuration()
