@@ -21,30 +21,26 @@ gui_vars = classes.GuiVars(st)
 errors_class = classes.ErrorsWriter(func_model.get_current_time(), "errors//")
 stop_flag = False
 
-if __name__ == "__main__":
-    window = Tk()
-    window.geometry('380x400')
-
-    gui_configuration()
 
 
-def gui_configuration() -> None:
+def add_to_list(workspace_id: str, thread_name: str) -> None:
     """
-    creating a TkVars instance to generate the tkinter view
-    :return:
-    None
+    calling the pull request until there are none more objects
+    to pull
+    :param workspace_id str: the unique key of the case in relativity
+    :return: None
     """
-    font_tuple = ("Comic Sans MS", 20, "bold")
-    font_size = 14
+    i = 0
+    while not stop_flag:
+        
+        data = server_model.pull_request(workspace_id, i, head, thread_name)
+       
+        all_objects.append(data)
 
-    tk_vars = classes.TkVars(window, font_size, font_tuple)
+        i += 1
+        if not data:
 
-    start_button = Button(text="start", font=font_size,
-                          command=lambda: start(tk_vars))
-    start_button.grid(row=15, column=2)
-
-    window.focus()
-    window.mainloop()
+            break
 
 
 class MyThread(Thread):
@@ -71,153 +67,6 @@ def start(tk_vars: classes.TkVars) -> None:
     first_run_thread = MyThread("first", tk_vars, second_run_thread)
 
     first_run_thread.start()
-
-
-def checker(tk_vars: classes.TkVars, thread_name: str, second_thread: MyThread) -> None:
-    """_summary_
-    checking if the user's inputs are legal
-    Args:
-        tk_vars (classes.TkVars): a class instance that holds the tkinter info
-        thread_name (str): the thread's name
-        second_thread (MyThread): the second thread
-    """
-
-    workspace_id = tk_vars.workspace_id_entry.get()
-
-    if workspace_id == "":
-
-        tk_vars.workspace_error_label.config(text="ENTER CASE ID", fg="red")
-
-    else:
-        tk_vars.workspace_error_label.config(text="V", fg="green")
-
-        gui_vars.workspace_id = workspace_id
-
-        warnings.catch_warnings()
-        warnings.simplefilter("ignore")
-        try:
-            gui_vars.workers = int(tk_vars.workers.get())
-
-        except:
-            gui_vars.workers = 16
-
-        try:
-            tk_vars.dpi = int(tk_vars.dpi_entry.get())
-
-        # if the user didn't input any, will set it to 100
-        except:
-
-            if thread_name == "first":
-
-                tk_vars.dpi = 100
-
-            # increasing the dpi for the second run if the user didn't choose a dpi
-            else:
-
-                tk_vars.dpi = 300
-
-        tk_vars.psm = str(tk_vars.psm_entry.get())
-
-        func_model.create_folder("errors//")
-        func_model.create_folder("files//")
-
-        tk_vars.info_label.config(text="waiting for response")
-
-        background_thread = Thread(target=lambda: add_to_list(workspace_id, thread_name))
-
-        # Start the thread
-        background_thread.start()
-
-        if thread_name == "second":
-            print("here")
-            all_objects.clear()
-
-        loop_start(tk_vars, thread_name)
-
-        if thread_name == "first" and tk_vars.no_rot.get() == 0:
-          
-            second_thread.start()
-
-
-def loop_start(tk_vars: classes.TkVars, thread_name: str) -> None:
-    """_summary_
-    starting the loop to iterate through the objects from relativity
-    Args:
-        tk_vars (classes.TkVars): a class instance that holds the tkinter info
-
-    Returns:
-        None
-    """
-    for i in range(50000):
-
-        if i == 0:
-
-            start_loop_time_tracker = time.time()
-            
-            # waiting for the response from relativity
-            while True:
-                
-                try:
-
-                    partial_objects_list = all_objects[i]
-
-                    # we got a response, the list isn't empty, break the loop
-                    if len(partial_objects_list) > 0:
-                        
-                        info_download(tk_vars, partial_objects_list, i, thread_name)
-                        break
-                
-                    # too much time went by, user didn't mark anything in relativity
-                    if func_model.run_time_checker(start_loop_time_tracker):
-                        print("did you mark the right conditions in relativity?")
-                        break
-                    
-                except Exception as e:
-                    if func_model.run_time_checker(start_loop_time_tracker):
-                        print("error is", e)
-                        logger.error("An exception occurred " , exc_info=True)
-                        break
-                    pass
-                time.sleep(1)
-
-        # not the first iteration, no need to wait anymore for response        
-        else:
-            # checking if there are objects to itreate through or we done
-            try:
-                partial_objects_list = all_objects[i]
-
-                if len(partial_objects_list) > 0:
-                    
-                    info_download(tk_vars, partial_objects_list, i, thread_name)
-
-            except:
-
-                et = time.time()
-                func_model.no_more_files(tk_vars.info_label, gui_vars.st, et)
-                stop_flag = True
-                background_thread.join()
-                break
-
-
-
-def add_to_list(workspace_id: str, thread_name: str) -> None:
-    """
-    calling the pull request until there are none more objects
-    to pull
-    :param workspace_id str: the unique key of the case in relativity
-    :return: None
-    """
-    i = 0
-    while not stop_flag:
-        
-        data = server_model.pull_request(workspace_id, i, head, thread_name)
-       
-        all_objects.append(data)
-
-        i += 1
-        if not data:
-
-            break
 
 
 def info_download(tk_vars: classes.TkVars, objects: [str], i: int, thread_name: str) -> None:
@@ -255,8 +104,6 @@ def info_download(tk_vars: classes.TkVars, objects: [str], i: int, thread_name: 
 
         pool.close()
         pool.join()
-
-
 
 def files_download(tk_vars: classes.TkVars, partial_objects_list: [str], thread_name: str, lock_required: bool) -> None:
     """
@@ -372,3 +219,155 @@ def extract_text(file_path: str, suffix: str, thread_name: str, dpi: int, psm: s
 
     # deleting the file once we are done with it
     remove(file_path)
+
+
+def loop_start(tk_vars: classes.TkVars, thread_name: str) -> None:
+    """_summary_
+    starting the loop to iterate through the objects from relativity
+    Args:
+        tk_vars (classes.TkVars): a class instance that holds the tkinter info
+
+    Returns:
+        None
+    """
+    for i in range(50000):
+
+        if i == 0:
+
+            start_loop_time_tracker = time.time()
+            
+            # waiting for the response from relativity
+            while True:
+                
+                try:
+
+                    partial_objects_list = all_objects[i]
+
+                    # we got a response, the list isn't empty, break the loop
+                    if len(partial_objects_list) > 0:
+                        
+                        info_download(tk_vars, partial_objects_list, i, thread_name)
+                        break
+                
+                    # too much time went by, user didn't mark anything in relativity
+                    if func_model.run_time_checker(start_loop_time_tracker):
+                        print("did you mark the right conditions in relativity?")
+                        break
+                    
+                except Exception as e:
+                    if func_model.run_time_checker(start_loop_time_tracker):
+                        print("error is", e)
+                        logger.error("An exception occurred " , exc_info=True)
+                        break
+                    pass
+                time.sleep(1)
+
+        # not the first iteration, no need to wait anymore for response        
+        else:
+            # checking if there are objects to itreate through or we done
+            try:
+                partial_objects_list = all_objects[i]
+
+                if len(partial_objects_list) > 0:
+                    
+                    info_download(tk_vars, partial_objects_list, i, thread_name)
+
+            except:
+
+                et = time.time()
+                func_model.no_more_files(tk_vars.info_label, gui_vars.st, et)
+                stop_flag = True
+                background_thread.join()
+                break
+
+
+def checker(tk_vars: classes.TkVars, thread_name: str, second_thread: MyThread) -> None:
+    """_summary_
+    checking if the user's inputs are legal
+    Args:
+        tk_vars (classes.TkVars): a class instance that holds the tkinter info
+        thread_name (str): the thread's name
+        second_thread (MyThread): the second thread
+    """
+
+    workspace_id = tk_vars.workspace_id_entry.get()
+
+    if workspace_id == "":
+
+        tk_vars.workspace_error_label.config(text="ENTER CASE ID", fg="red")
+
+    else:
+        tk_vars.workspace_error_label.config(text="V", fg="green")
+
+        gui_vars.workspace_id = workspace_id
+
+        warnings.catch_warnings()
+        warnings.simplefilter("ignore")
+        try:
+            gui_vars.workers = int(tk_vars.workers.get())
+
+        except:
+            gui_vars.workers = 16
+
+        try:
+            tk_vars.dpi = int(tk_vars.dpi_entry.get())
+
+        # if the user didn't input any, will set it to 100
+        except:
+
+            if thread_name == "first":
+
+                tk_vars.dpi = 100
+
+            # increasing the dpi for the second run if the user didn't choose a dpi
+            else:
+
+                tk_vars.dpi = 300
+
+        tk_vars.psm = str(tk_vars.psm_entry.get())
+
+        func_model.create_folder("errors//")
+        func_model.create_folder("files//")
+
+        tk_vars.info_label.config(text="waiting for response")
+
+        background_thread = Thread(target=lambda: add_to_list(workspace_id, thread_name))
+
+        # Start the thread
+        background_thread.start()
+
+        if thread_name == "second":
+            print("here")
+            all_objects.clear()
+
+        loop_start(tk_vars, thread_name)
+
+        if thread_name == "first" and tk_vars.no_rot.get() == 0:
+          
+            second_thread.start()
+
+
+def gui_configuration() -> None:
+    """
+    creating a TkVars instance to generate the tkinter view
+    :return:
+    None
+    """
+    font_tuple = ("Comic Sans MS", 20, "bold")
+    font_size = 14
+
+    tk_vars = classes.TkVars(window, font_size, font_tuple)
+
+    start_button = Button(text="start", font=font_size,
+                          command=lambda: start(tk_vars))
+    start_button.grid(row=15, column=2)
+
+    window.focus()
+    window.mainloop()
+
+
+if __name__ == "__main__":
+    window = Tk()
+    window.geometry('380x400')
+
+    gui_configuration()
