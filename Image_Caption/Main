@@ -13,7 +13,7 @@ import server_model
 from caption_model import CaptionModel
 
 
-lock = Lock
+lock = Lock()
 all_objects = []
 func_model.create_folder("logs//")
 logger = func_model.configure_logger('my_logger', "logs//" + func_model.get_current_time() + ".log")
