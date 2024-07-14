@@ -6,8 +6,12 @@ from typing import Any
 import warnings
 from numba import jit, cuda 
 
+# These line allow truncated images to be loaded.
+ImageFile.LOAD_TRUNCATED_IMAGES = True
+# These line set the maximum image pixels to 999999999.
+Image.MAX_IMAGE_PIXELS=999999999
 
-pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract.exe'
+pytesseract.pytesseract.tesseract_cmd =path to tesseract 
 warnings.catch_warnings()
 warnings.simplefilter("ignore")
 
